@@ -8,6 +8,7 @@ import java.util.ArrayList;
 public class NERCorpus {
 	ArrayList<NERSequence> instances;
 	CountDictionary tokenDict, posDict, chunkDict, nerDict;
+	boolean isLabeled;
 	
 	public NERCorpus() {
 		this.tokenDict = new CountDictionary();
@@ -15,23 +16,27 @@ public class NERCorpus {
 		this.chunkDict = new CountDictionary();
 		this.nerDict = new CountDictionary();
 		this.instances = new ArrayList<NERSequence>();
+		this.isLabeled = true;
 	}
 	
-	public NERCorpus(NERCorpus baseCorpus) {
+	public NERCorpus(NERCorpus baseCorpus, boolean isLabeled) {
 		this.tokenDict = baseCorpus.tokenDict;
 		this.posDict = baseCorpus.posDict;
 		this.chunkDict = baseCorpus.chunkDict;
 		this.nerDict = baseCorpus.nerDict;
 		this.instances = new ArrayList<NERSequence>();
+		this.isLabeled = isLabeled;
 	}
 	
 	public NERCorpus(CountDictionary tokenDict, CountDictionary posDict,
-			CountDictionary chunkDict, CountDictionary nerDict) {
+			CountDictionary chunkDict, CountDictionary nerDict,
+			boolean isLabeled) {
 		this.tokenDict = tokenDict;
 		this.posDict = posDict;
 		this.chunkDict = chunkDict;
 		this.nerDict = nerDict;
 		this.instances = new ArrayList<NERSequence>();
+		this.isLabeled = isLabeled;
 	}
 	
 	public void readFromCoNLL2003(String filePath) {
@@ -76,7 +81,11 @@ public class NERCorpus {
 			tokenIDs[i] = tokenDict.addString(tokens.get(i));
 			posTagIDs[i] = posDict.addString(posTags.get(i));
 			chunkTagIDs[i] = chunkDict.addString(chunkTags.get(i));
-			nerTagIDs[i] = nerDict.addString(nerTags.get(i));
+			if (this.isLabeled) {
+				nerTagIDs[i] = nerDict.addString(nerTags.get(i));
+			} else {
+				nerTagIDs[i] = nerDict.addString(nerTags.get(i), "O");
+			}
 		}
 		int newInstanceID = instances.size();
 		instances.add(new NERSequence(this, newInstanceID, tokenIDs, posTagIDs,
@@ -91,13 +100,29 @@ public class NERCorpus {
 		return this.instances.size();
 	}
 	
+	public void printCorpusInfo() {
+		System.out.println("Number of sentences:\t" + instances.size());
+		System.out.println("Number of words:\t" + tokenDict.size());
+		System.out.println("Number of pos-tags:\t" + posDict.size());
+		System.out.println("Number of chunk-tags:\t" + chunkDict.size());
+		System.out.println("Number of ner-tags:\t" + nerDict.size());
+	}
+	
 	public static void main(String[] args) {
-		NERCorpus corpus = new NERCorpus();
-		corpus.readFromCoNLL2003("./data/eng.train");
-		System.out.println("Read " + corpus.size() + " sentences.");
-		for (NERSequence instance : corpus.instances) {
+		NERCorpus corpusTrain = new NERCorpus();
+		corpusTrain.readFromCoNLL2003("./data/eng.train");
+		//System.out.println("Read " + corpusTrain.size() + " sentences.");
+		/*
+		 for (NERSequence instance : corpusTrain.instances) {
 			System.out.println(instance.toString());
 		}
+		*/
+		
+		NERCorpus corpusDev = new NERCorpus(corpusTrain, false);
+		corpusDev.readFromCoNLL2003("./data/eng.testa");
+		//System.out.println("Read " + corpusDev.size() + " sentences.");
+		corpusTrain.printCorpusInfo();
+		corpusDev.printCorpusInfo();
 	}
 }
 

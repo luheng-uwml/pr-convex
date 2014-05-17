@@ -30,6 +30,11 @@ public class CountDictionary {
 		}
 	}
 	
+	public int addString(String str, String unseenMarker) {
+		return str2index.contains(str) ? addString(str) :
+				addString(unseenMarker);
+	}
+	
 	public int lookupString(String str) {
 		if (!str2index.contains(str)) {
 			return -1;
