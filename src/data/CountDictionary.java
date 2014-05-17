@@ -17,7 +17,7 @@ public class CountDictionary {
 	
 	public int addString(String str) {
 		if (str2index.contains(str)) {
-			int sid = index2str.size();
+			int sid = str2index.get(str);
 			int count = index2count.get(sid);
 			index2count.set(sid, count + 1);
 			return sid;

@@ -1,16 +1,26 @@
 package data;
 
 public class NERSequence {
+	NERCorpus corpus;
 	int sequenceID, length;
 	int[] tokens, posTags, chunkTags, nerTags;
 	
-	public NERSequence(int sequenceID, int[] tokens, int[] posTags,
-			int[] chunkTags, int[] nerTags) {
+	public NERSequence(NERCorpus corpus, int sequenceID, int[] tokens,
+			int[] posTags, int[] chunkTags, int[] nerTags) {
+		this.corpus = corpus;
 		this.sequenceID = sequenceID;
 		this.tokens = tokens;
 		this.posTags = posTags;
+		this.chunkTags = chunkTags;
+		this.nerTags = nerTags;
 		this.length = tokens.length;
 	}
 	
-	
+	@Override
+	public String toString() {
+		String retString = "";
+		retString += NLPUtils.printJoin(tokens, corpus.tokenDict) + "\n";
+		retString += NLPUtils.printJoin(nerTags, corpus.nerDict) + "\n";
+		return retString;
+	}
 }
