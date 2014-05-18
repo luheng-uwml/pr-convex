@@ -2,14 +2,15 @@ package inference;
 
 public class SequentialInference {
 	public double[][] alpha, beta;
-	private int S0, SN, numStates, numTargetStates;
+	private int S0, SN, numTargetStates;
 	private double[] sTemp;
 	
 	public SequentialInference(int numStates, int maxInstanceLength) {
 		alpha = new double[maxInstanceLength + 1][numStates];
 		beta = new double[maxInstanceLength + 1][numStates];
 		sTemp = new double[numStates + 1];
-		numStates = numTargetStates - 2;
+		//this.numStates = numStates;
+		this.numTargetStates = numStates - 2;
 		// FIXME: this is hacky, fix this.
 		S0 = numStates - 2;
 		SN = numStates - 1;
