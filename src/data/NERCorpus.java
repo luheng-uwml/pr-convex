@@ -5,7 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import feature.NERPotentialFunction;
+import feature.NERFeatureExtractor;
 
 public class NERCorpus {
 	public ArrayList<NERSequence> instances;
@@ -128,7 +128,7 @@ public class NERCorpus {
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
 		int numAllInstances = corpusTrain.size() + corpusDev.size();
-		NERPotentialFunction ffunc = new NERPotentialFunction(corpusTrain);
+		NERFeatureExtractor ffunc = new NERFeatureExtractor(corpusTrain);
 		ffunc.extractFeatures(corpusTrain.instances);
 		System.out.println(ffunc.getNumObservations());
 		ffunc.extractFeatures(corpusDev.instances);

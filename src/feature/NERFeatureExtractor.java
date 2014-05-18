@@ -6,23 +6,53 @@ import data.CountDictionary;
 import data.NERCorpus;
 import data.NERSequence;
 
-public class NERPotentialFunction {
+public class NERFeatureExtractor {
 	NERCorpus corpus;
-	CountDictionary observationDict, featureDict, stateDict;
-	// total sentences, tokens, tags, previous tags,
-	SparseVector[][][][] features;  
-	int numStates;
+	CountDictionary nodeFeatureDict, edgeFeatureDict, stateDict;
+	SparseVector[][] nodeFeatures, edgeFeatures;  
+	int numStates, startStateID, endStateID;
 	
-	public NERPotentialFunction(NERCorpus corpus) {
+	public NERFeatureExtractor(NERCorpus corpus) {
 		this.corpus = corpus;
-		observationDict = new CountDictionary();
-		featureDict = new CountDictionary();
-		stateDict = new CountDictionary(corpus.nerDict);
-		stateDict.addString("O-START"); // dummy start state
-		stateDict.addString("O-END");   // dummy end state
-		numStates = stateDict.size();
-		//features = new SparseVector[totalNumInstances][][][];
+		nodeFeatureDict = new CountDictionary();
+		edgeFeatureDict = new CountDictionary();
+		//computeEdgeFeatures();
 	}
+	
+	public void computeEdgeFeatures() {
+		stateDict = new CountDictionary(corpus.nerDict);
+		startStateID = stateDict.addString("O-START"); // dummy start state
+		endStateID = stateDict.addString("O-END");   // dummy end state
+		numStates = stateDict.size();
+		nodeFeatures = new SparseVector[numStates][numStates];
+		for (int i = 0; i < numStates; i++) { // current state
+			for (int j = 0; j < numStates; j++) { // prev state
+				if (j == endStateID) {
+					continue;
+				}
+				edgeFeatures[i][j] = computeEdgeFeatures(
+						corpus.nerDict.getString(i), 
+						corpus.nerDict.getString(j));
+			}
+		}
+	}
+	
+	public void computeNodeFeatures(ArrayList<NERSequence> instances) {
+		for (NERSequence instance : instances) {
+			
+		}
+	}
+	
+	private SparseVector computeEdgeFeatures(String state, String prevState) {
+		DynamicSparseVector fv0 = new DynamicSparseVector();
+		fv0.add(nodeFeatureDict.addString("NER=" + state), 1);
+		fv0.add(nodeFeatureDict.addString("NER_prev=" + prevState), 1);
+		fv0.add(nodeFeatureDict.addString(
+				"NER_bi=" +state + "_" + prevState), 1);
+		return new SparseVector(fv0);
+	}
+	
+	
 	
 	public void extractFeatures(ArrayList<NERSequence> instances) {
 		for (NERSequence instance : instances) {
