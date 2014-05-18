@@ -1,6 +1,6 @@
 package data;
 
-public class NLPUtils {
+public class IOHelper {
 	public static String printJoin(int[] strIDs, CountDictionary strDict) {
 		String joined = "";
 		for (int sid : strIDs) {

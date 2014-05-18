@@ -34,13 +34,13 @@ public class SequentialFeatures {
 		return edgeFeatures[stateID][prevStateID].dotProduct(weights);
 	}
 	
-	public void addToEmpirical(int instanceID, int position, int stateID,
-			int prevStateID, double[] empirical, double marginal) {
-		if (Double.isInfinite(marginal) || Double.isNaN(marginal)) {
+	public void addToSoftCounts(int instanceID, int position, int stateID,
+			int prevStateID, double[] counts, double weight) {
+		if (Double.isInfinite(weight) || Double.isNaN(weight)) {
 			return;
 		}
 		int offset = 1 + numEdgeFeatures + stateID * numNodeFeatures;
-		nodeFeatures[instanceID][position].addTo(empirical, marginal, offset);
-		edgeFeatures[stateID][prevStateID].addTo(empirical, marginal);
+		nodeFeatures[instanceID][position].addTo(counts, weight, offset);
+		edgeFeatures[stateID][prevStateID].addTo(counts, weight);
 	}
 }

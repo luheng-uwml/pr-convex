@@ -10,7 +10,7 @@ public class NERFeatureExtractor {
 	NERCorpus corpus;
 	CountDictionary nodeFeatureDict, edgeFeatureDict, stateDict;
 	SparseVector[][] nodeFeatures, edgeFeatures;  
-	int numStates, startStateID, endStateID;
+	int numStates, startStateID, endStateID, numNodeFeatures, numEdgeFeatures;
 	int MIN_FEATURE_FREQ = 3; 
 			
 	public NERFeatureExtractor(NERCorpus corpus,
@@ -36,6 +36,7 @@ public class NERFeatureExtractor {
 						stateDict.getString(i), stateDict.getString(j));
 			}
 		}
+		numEdgeFeatures = edgeFeatureDict.size();
 	}
 	
 	public void computeNodeFeatures(ArrayList<NERSequence> instances) {
@@ -47,12 +48,6 @@ public class NERFeatureExtractor {
 			}
 		}
 		nodeFeatureDict = new CountDictionary(rawFeatureDict, MIN_FEATURE_FREQ);
-		/*
-		System.out.println("Original number of features\t" +
-				rawFeatureDict.size());
-		System.out.println("Filtered number of features\t" +
-				nodeFeatureDict.size());
-		*/
 		nodeFeatures = new SparseVector[instances.size()][]; 
 		for (int i = 0; i < instances.size(); i++) {
 			NERSequence instance = instances.get(i);
@@ -62,7 +57,13 @@ public class NERFeatureExtractor {
 				nodeFeatures[i][j] = addNodeFeatures(instance, j,
 						nodeFeatureDict, false); 
 			}
-		}	
+		}
+		numNodeFeatures = nodeFeatureDict.size();
+	}
+	
+	public SequentialFeatures getSequentialFeatures() {
+		return new SequentialFeatures(nodeFeatures, edgeFeatures,
+				numNodeFeatures, numEdgeFeatures);
 	}
 	
 	private SparseVector addEdgeFeatures(String state, String prevState) {

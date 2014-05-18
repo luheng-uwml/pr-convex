@@ -19,8 +19,8 @@ public class NERSequence {
 	@Override
 	public String toString() {
 		String retString = "";
-		retString += NLPUtils.printJoin(tokens, corpus.tokenDict) + "\n";
-		retString += NLPUtils.printJoin(nerTags, corpus.nerDict) + "\n";
+		retString += IOHelper.printJoin(tokens, corpus.tokenDict) + "\n";
+		retString += IOHelper.printJoin(nerTags, corpus.nerDict) + "\n";
 		return retString;
 	}
 	
