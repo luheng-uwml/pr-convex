@@ -151,7 +151,9 @@ public class NERFeatureExtractor {
 	
 	public void printInfo() {
 		System.out.println("Number of states\t" + numStates);
+		System.out.println("Dummy start state:\t" + startStateID);
+		System.out.println("Dummy end state:\t" + endStateID);
 		System.out.println("Number of features\t" +
-				(nodeFeatureDict.size() * numStates + edgeFeatureDict.size() + 1));
+			(nodeFeatureDict.size() * numStates + edgeFeatureDict.size() + 1));
 	}
 }

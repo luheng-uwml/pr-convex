@@ -3,7 +3,7 @@ package feature;
 public class SequentialFeatures {
 	SparseVector[][] nodeFeatures; // instances x  postions  
 	SparseVector[][] edgeFeatures; // states x states
-	int numStates, numNodeFeatures, numEdgeFeatures;
+	int numStates, numTargetStates, numNodeFeatures, numEdgeFeatures;
 	
 	public SequentialFeatures(SparseVector[][] nodeFeatures,
 			SparseVector[][] edgeFeatures,
@@ -11,8 +11,24 @@ public class SequentialFeatures {
 		this.nodeFeatures = nodeFeatures;
 		this.edgeFeatures = edgeFeatures;
 		this.numStates = edgeFeatures.length;
+		this.numTargetStates = numStates - 2; // excluding dummy states
 		this.numNodeFeatures = numNodeFeatures;
 		this.numEdgeFeatures = numEdgeFeatures;
+	}
+	
+	public void computeScores(int instanceID, double[][] nodeScores,
+			double[][] edgeScores, double[] weights) {
+		int length = nodeFeatures[instanceID].length;
+		for (int i = 0; i < length; i++) {
+			for (int j = 0; j < numTargetStates; j++) {
+				nodeScores[i][j] = computeNodeScore(instanceID, i, j, weights);
+			}
+		}
+		for (int i = 0; i < numStates; i++) { 
+			for (int j = 0; j < numStates; j++) {
+				edgeScores[i][j] = computeEdgeScore(i, j, weights);
+			}
+		}
 	}
 	
 	public double computeScore(int instanceID, int position, int stateID,
