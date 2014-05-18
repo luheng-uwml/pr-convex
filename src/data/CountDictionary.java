@@ -34,9 +34,9 @@ public class CountDictionary {
 				continue;
 			}
 			String str = dict.getString(sid);
+			str2index.put(str, index2str.size());
 			index2str.add(str);
-			index2count.add(dict.getCount(sid));
-			str2index.put(str, index2str.size() - 1);
+			index2count.add(freq);
 		}
 	}
 	
@@ -97,7 +97,7 @@ public class CountDictionary {
 	}
 	
 	public int getCount(int index) {
-		return (index < index2count.size()) ? 0 : index2count.get(index); 
+		return (index < index2count.size()) ? index2count.get(index) : 0; 
 	}
 	
 	public int size() {

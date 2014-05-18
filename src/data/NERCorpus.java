@@ -127,12 +127,13 @@ public class NERCorpus {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numAllInstances = corpusTrain.size() + corpusDev.size();
-		NERFeatureExtractor ffunc = new NERFeatureExtractor(corpusTrain);
-		ffunc.extractFeatures(corpusTrain.instances);
-		System.out.println(ffunc.getNumObservations());
-		ffunc.extractFeatures(corpusDev.instances);
-		System.out.println(ffunc.getNumObservations());
+		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
+		allInstances.addAll(corpusTrain.instances);
+		allInstances.addAll(corpusDev.instances);
+		
+		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
+				allInstances);
+		extractor.printInfo();
 	}
 }
 
