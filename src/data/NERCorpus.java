@@ -5,6 +5,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import feature.NERPotentialFunction;
+
 public class NERCorpus {
 	public ArrayList<NERSequence> instances;
 	public CountDictionary tokenDict, posDict, chunkDict, nerDict;
@@ -112,17 +114,25 @@ public class NERCorpus {
 		NERCorpus corpusTrain = new NERCorpus();
 		corpusTrain.readFromCoNLL2003("./data/eng.train");
 		//System.out.println("Read " + corpusTrain.size() + " sentences.");
-		/*
-		 for (NERSequence instance : corpusTrain.instances) {
-			System.out.println(instance.toString());
-		}
-		*/
 		
 		NERCorpus corpusDev = new NERCorpus(corpusTrain, false);
 		corpusDev.readFromCoNLL2003("./data/eng.testa");
 		//System.out.println("Read " + corpusDev.size() + " sentences.");
 		corpusTrain.printCorpusInfo();
 		corpusDev.printCorpusInfo();
+		
+		int numAllTokens = 0;
+		for (NERSequence instance : corpusTrain.instances) {
+			numAllTokens += instance.length;
+		}
+		System.out.println("Number of all tokens:\t" + numAllTokens);
+		
+		int numAllInstances = corpusTrain.size() + corpusDev.size();
+		NERPotentialFunction ffunc = new NERPotentialFunction(corpusTrain);
+		ffunc.extractFeatures(corpusTrain.instances);
+		System.out.println(ffunc.getNumObservations());
+		ffunc.extractFeatures(corpusDev.instances);
+		System.out.println(ffunc.getNumObservations());
 	}
 }
 

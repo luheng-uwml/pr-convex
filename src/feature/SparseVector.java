@@ -35,4 +35,24 @@ public class SparseVector {
 		}
 		return result;
 	}
+	
+	public double dotProduct(double[] weights, int offset) {
+		double result = 0;
+		for (int i = 0; i < length; i ++) {
+			result += values[i] * weights[indices[i] + offset];
+		}
+		return result;
+	}
+	
+	public void addTo(double[] counts, double weight) {
+		for (int i = 0; i < length; i ++) {
+			counts[indices[i]] += values[i] * weight;
+		}
+	}
+	
+	public void addTo(double[] counts, double weight, int offset) {
+		for (int i = 0; i < length; i ++) {
+			counts[indices[i] + offset] += values[i] * weight;
+		}
+	}
 }

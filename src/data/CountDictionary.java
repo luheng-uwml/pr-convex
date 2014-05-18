@@ -21,8 +21,8 @@ public class CountDictionary {
 		for (int sid = 0; sid < dict.size(); sid ++) {
 			String str = dict.getString(sid);
 			index2str.add(str);
+			index2count.add(dict.getCount(sid));
 			str2index.put(str, sid);
-			index2count.set(sid, dict.getCount(sid));
 		}
 	}
 	
@@ -34,13 +34,18 @@ public class CountDictionary {
 				continue;
 			}
 			String str = dict.getString(sid);
-			int newSID = index2str.size(); 
 			index2str.add(str);
-			str2index.put(str, newSID);
-			index2count.set(newSID, dict.getCount(sid));
+			index2count.add(dict.getCount(sid));
+			str2index.put(str, index2str.size() - 1);
 		}
 	}
 	
+	public void clearCounts() {
+		for (int sid = 0; sid < index2count.size(); sid ++) {
+			index2count.set(sid, 0);
+		}
+	}
+ 	
 	public int addString(String str) {
 		if (str2index.contains(str)) {
 			int sid = str2index.get(str);
@@ -54,6 +59,22 @@ public class CountDictionary {
 			str2index.put(str, sid);
 			return sid;
 		}
+	}
+	
+	public int addString(String str, boolean acceptNew) {
+		if (str2index.contains(str)) {
+			int sid = str2index.get(str);
+			int count = index2count.get(sid);
+			index2count.set(sid, count + 1);
+			return sid;
+		} else if (acceptNew) {
+			int sid = index2str.size();
+			index2str.add(str);
+			index2count.add(1);
+			str2index.put(str, sid);
+			return sid;
+		}
+		return -1;
 	}
 	
 	public int addString(String str, String unseenMarker) {
