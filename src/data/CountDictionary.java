@@ -15,6 +15,24 @@ public class CountDictionary {
 		this.index2count = new ArrayList<Integer>();
 	}
 	
+	// Copy from existing dictionary.
+	public CountDictionary(CountDictionary dict) {
+		this();
+		for (int sid = 0; sid < index2str.size(); sid ++) {
+			str2index.put(dict.getString(sid), sid);
+			index2count.set(sid, dict.getCount(sid));
+		}
+	}
+	
+	public CountDictionary(CountDictionary dict, int minFrequency) {
+		// TODO
+		this();
+		for (int sid = 0; sid < index2str.size(); sid ++) {
+			str2index.put(dict.getString(sid), sid);
+			index2count.set(sid, dict.getCount(sid));
+		}
+	}
+	
 	public int addString(String str) {
 		if (str2index.contains(str)) {
 			int sid = str2index.get(str);

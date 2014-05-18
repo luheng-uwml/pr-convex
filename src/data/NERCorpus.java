@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class NERCorpus {
-	ArrayList<NERSequence> instances;
-	CountDictionary tokenDict, posDict, chunkDict, nerDict;
+	public ArrayList<NERSequence> instances;
+	public CountDictionary tokenDict, posDict, chunkDict, nerDict;
 	boolean isLabeled;
 	
 	public NERCorpus() {
