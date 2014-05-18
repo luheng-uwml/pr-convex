@@ -18,18 +18,26 @@ public class CountDictionary {
 	// Copy from existing dictionary.
 	public CountDictionary(CountDictionary dict) {
 		this();
-		for (int sid = 0; sid < index2str.size(); sid ++) {
-			str2index.put(dict.getString(sid), sid);
+		for (int sid = 0; sid < dict.size(); sid ++) {
+			String str = dict.getString(sid);
+			index2str.add(str);
+			str2index.put(str, sid);
 			index2count.set(sid, dict.getCount(sid));
 		}
 	}
 	
-	public CountDictionary(CountDictionary dict, int minFrequency) {
-		// TODO
+	public CountDictionary(CountDictionary dict, int minFrequency) { 
 		this();
-		for (int sid = 0; sid < index2str.size(); sid ++) {
-			str2index.put(dict.getString(sid), sid);
-			index2count.set(sid, dict.getCount(sid));
+		for (int sid = 0; sid < dict.size(); sid ++) {
+			int freq = dict.getCount(sid);
+			if (freq < minFrequency) {
+				continue;
+			}
+			String str = dict.getString(sid);
+			int newSID = index2str.size(); 
+			index2str.add(str);
+			str2index.put(str, newSID);
+			index2count.set(newSID, dict.getCount(sid));
 		}
 	}
 	
