@@ -43,6 +43,18 @@ public class ArrayHelper {
 		}
 	}
 	
+	public static void addTo(int[] src, int[] dest) {
+		for (int i = 0; i < src.length; i++) {
+			dest[i] += src[i];
+		}
+	}
+	
+	public static void addTo(double[] src, double[] dest) {
+		for (int i = 0; i < src.length; i++) {
+			dest[i] += src[i];
+		}
+	}
+	
 	public static double l2Norm(double[] arr) {
 		double norm = 0;
 		for (int i = 0; i < arr.length; i++) {

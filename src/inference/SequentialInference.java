@@ -88,8 +88,14 @@ public class SequentialInference {
 		return logNorm;
 	}
 	
-	public void viterbi(double[][] nodeScores, double[][] edgeScores,
-			int[] bestSequence) {
+	public void posteriorDecoding(double[][] nodeMarginals, int[] prediction) {
+		for (int i = 0; i < nodeMarginals.length; i++) {
+			prediction[i] = LatticeHelper.getMaxIndex(nodeMarginals[i]);
+		}
+	}
+	
+	public void viterbiDecoding(double[][] nodeScores, double[][] edgeScores,
+			int[] prediction) {
 		// TODO: viterbi decoding
 	}
 	
