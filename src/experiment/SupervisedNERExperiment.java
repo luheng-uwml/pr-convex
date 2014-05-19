@@ -43,7 +43,7 @@ public class SupervisedNERExperiment {
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
 		BatchGradientDescent optimizer = new BatchGradientDescent(features,
-				labels, eval, 1.0, 2e-5, 100);
+				labels, eval, 0.01, 3e-5, 500);
 		optimizer.optimize();
 	}
 }

@@ -68,6 +68,7 @@ public class NERFeatureExtractor {
 	
 	private SparseVector addEdgeFeatures(String state, String prevState) {
 		DynamicSparseVector fv0 = new DynamicSparseVector();
+		fv0.add(edgeFeatureDict.addString("BIAS"), 1);
 		fv0.add(edgeFeatureDict.addString("NER=" + state), 1);
 		fv0.add(edgeFeatureDict.addString("NER_prev=" + prevState), 1);
 		fv0.add(edgeFeatureDict.addString(
@@ -154,6 +155,6 @@ public class NERFeatureExtractor {
 		System.out.println("Dummy start state:\t" + startStateID);
 		System.out.println("Dummy end state:\t" + endStateID);
 		System.out.println("Number of features\t" +
-			(nodeFeatureDict.size() * numStates + edgeFeatureDict.size() + 1));
+			(nodeFeatureDict.size() * numStates + edgeFeatureDict.size()));
 	}
 }

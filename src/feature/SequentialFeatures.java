@@ -15,8 +15,8 @@ public class SequentialFeatures {
 		this.numTargetStates = numStates - 2; // excluding dummy states
 		this.numNodeFeatures = numNodeFeatures;
 		this.numEdgeFeatures = numEdgeFeatures;
-		this.numAllFeatures = 1 + numEdgeFeatures +
-				numNodeFeatures * numTargetStates;
+		this.numAllFeatures = numEdgeFeatures + numNodeFeatures *
+				numTargetStates;
 		System.out.println("states:\t" + this.numStates);
 		System.out.println("features:\t" + this.numAllFeatures);
 	}
@@ -53,8 +53,7 @@ public class SequentialFeatures {
 	
 	public double computeScore(int instanceID, int position, int stateID,
 			int prevStateID, double[] weights) {
-		return weights[0] +
-				computeNodeScore(instanceID, position, stateID, weights) +
+		return computeNodeScore(instanceID, position, stateID, weights) +
 				computeEdgeScore(stateID, prevStateID, weights);
 	}
 	
@@ -62,7 +61,7 @@ public class SequentialFeatures {
 			double[] weights) {
 		// bias + edge features + node features * (previous states)
 		// not defined for dummy states
-		int offset = 1 + numEdgeFeatures + stateID * numNodeFeatures;
+		int offset = numEdgeFeatures + stateID * numNodeFeatures;
 		return nodeFeatures[instanceID][position].dotProduct(weights, offset);
 	}
 	
@@ -78,7 +77,7 @@ public class SequentialFeatures {
 			return;
 		}
 		if (stateID < numTargetStates) {
-			int offset = 1 + numEdgeFeatures + stateID * numNodeFeatures;
+			int offset = numEdgeFeatures + stateID * numNodeFeatures;
 			nodeFeatures[instanceID][position].addTo(counts, weight, offset);
 		}
 		edgeFeatures[stateID][prevStateID].addTo(counts, weight);

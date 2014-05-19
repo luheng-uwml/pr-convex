@@ -65,10 +65,12 @@ public class BatchGradientDescent {
 			double recall = runningAccuracy[2] / runningAccuracy[0];
 			double f1 = (precision + recall > 0) ?
 					(2 * precision * recall) / (precision + recall) : 0.0;
+					
 			System.out.println("ITER::\t" + iteration + "\tOBJ::\t" +
 					objective + "\tPREV::\t" + prevObjective + "\tGRAD::\t" +
 					ArrayHelper.l2Norm(gradient) + "\tPREC::\t" + precision +
 					"\tREC::\t" + recall + "\tF1::\t" + f1);
+			
 			if (Math.abs(objective - prevObjective) / prevObjective < 1e-5) {
 				System.out.println("succeed!");
 				break;
@@ -114,7 +116,8 @@ public class BatchGradientDescent {
 			runningAccuracy[1] += result[1];
 			runningAccuracy[2] += result[2];
 		}
-		objective = negLikelihood - 0.5 * lambda *
+		System.out.println("neg log likelihood:\t" + negLikelihood);
+		objective = negLikelihood + 0.5 * lambda *
 				ArrayHelper.l2Norm(parameters);
 	}
 	
