@@ -11,11 +11,12 @@ public class NERFeatureExtractor {
 	CountDictionary nodeFeatureDict, edgeFeatureDict, stateDict;
 	SparseVector[][] nodeFeatures, edgeFeatures;  
 	int numStates, startStateID, endStateID, numNodeFeatures, numEdgeFeatures;
-	int MIN_FEATURE_FREQ = 3; 
-			
+	int minFeatureFrequency;
+	
 	public NERFeatureExtractor(NERCorpus corpus,
-			ArrayList<NERSequence> instances) {
+			ArrayList<NERSequence> instances, int minFeatureFrequency) {
 		this.corpus = corpus;
+		this.minFeatureFrequency = minFeatureFrequency;
 		computeEdgeFeatures();
 		computeNodeFeatures(instances);
 	}
@@ -47,7 +48,8 @@ public class NERFeatureExtractor {
 				addNodeFeatures(instance, i, rawFeatureDict, true);
 			}
 		}
-		nodeFeatureDict = new CountDictionary(rawFeatureDict, MIN_FEATURE_FREQ);
+		nodeFeatureDict = new CountDictionary(rawFeatureDict,
+				minFeatureFrequency);
 		nodeFeatures = new SparseVector[instances.size()][]; 
 		for (int i = 0; i < instances.size(); i++) {
 			NERSequence instance = instances.get(i);

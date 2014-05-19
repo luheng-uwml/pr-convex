@@ -38,12 +38,12 @@ public class SupervisedNERExperiment {
 			labels[i] = corpusTrain.instances.get(i).getLabels();
 		}
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				allInstances);
+				allInstances, 10);
 		extractor.printInfo();
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
 		BatchGradientDescent optimizer = new BatchGradientDescent(features,
-				labels, eval, 0.01, 3e-5, 500);
+				labels, eval, 0.01, 0.001, 500);
 		optimizer.optimize();
 	}
 }

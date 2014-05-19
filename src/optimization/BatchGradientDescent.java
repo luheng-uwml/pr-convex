@@ -75,10 +75,13 @@ public class BatchGradientDescent {
 				System.out.println("succeed!");
 				break;
 			}
+			double currStepSize = this.backtrackingLineSearch(stepSize, 0.25, 0.5,
+					20);
 			for (int i = 0; i < numFeatures; i++) {
-				parameters[i] -= stepSize * gradient[i];
+				parameters[i] -= currStepSize * gradient[i];
 			}
 			prevObjective = objective;
+			stepSize = currStepSize * 1.5;
 		}
 	}
 	
@@ -121,6 +124,26 @@ public class BatchGradientDescent {
 				ArrayHelper.l2Norm(parameters);
 	}
 	
+	private double computeObjective(double[] tempParameters) {
+		double negLikelihood = 0;
+		double[][] edgeScores = new double[numStates][numStates];
+		features.computeEdgeScores(edgeScores, tempParameters);
+		for (int i : trainList) {
+			int length = features.getInstanceLength(i);
+			double[][] nodeScores = new double[length][numTargetStates];
+			double[][] nodeMarginals = new double[length][numStates];
+			double[][][] edgeMarginals =
+					new double[length + 1][numStates][numStates];
+			features.computeNodeScores(i, nodeScores, tempParameters);
+			double logNorm = model.computeMarginals(nodeScores, edgeScores, 
+					nodeMarginals, edgeMarginals);
+			negLikelihood -= model.computeLabelLikelihood(nodeScores,
+					edgeScores, logNorm, labels[i]);
+		}
+		return negLikelihood + 0.5 * lambda *
+				ArrayHelper.l2Norm(tempParameters);
+	}
+	
 	private void computeHardCounts(int instanceID, double[] counts) {
 		int length = features.getInstanceLength(instanceID);
 		for (int i = 0; i < length; i++) {
@@ -147,5 +170,27 @@ public class BatchGradientDescent {
 				}
 			}
 		}
+	}
+	
+	// try alpha = 0.5, beta = 0.9 ?
+	private double backtrackingLineSearch(double initStepSize, double alpha,
+			double beta, int maxIterations) {
+		double[] tempParameters = new double[numFeatures];
+		double tStep = initStepSize;
+		double gradientNorm = ArrayHelper.l2Norm(gradient);
+		for (int i = 0; i < maxIterations; i++) {
+			for (int j = 0; j < numFeatures; j++) {
+				tempParameters[j] = parameters[j] - tStep * gradient[j];
+			}
+			System.out.println("paramters norm:\t" + ArrayHelper.l2Norm(tempParameters));
+			double tempObjective = computeObjective(tempParameters);
+			System.out.println("temp objective:\t" + tempObjective);
+			if (tempObjective < objective - alpha * tStep * gradientNorm) {
+				return tStep;
+			}
+			tStep *= beta;
+		}
+		System.out.println("unable to find step size");
+		return initStepSize;
 	}
 }
