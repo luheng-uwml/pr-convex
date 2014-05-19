@@ -3,7 +3,8 @@ package feature;
 public class SequentialFeatures {
 	SparseVector[][] nodeFeatures; // instances x  postions  
 	SparseVector[][] edgeFeatures; // states x states
-	int numStates, numTargetStates, numNodeFeatures, numEdgeFeatures;
+	int numStates, numTargetStates, numNodeFeatures, numEdgeFeatures,
+		numAllFeatures;
 	
 	public SequentialFeatures(SparseVector[][] nodeFeatures,
 			SparseVector[][] edgeFeatures,
@@ -14,16 +15,33 @@ public class SequentialFeatures {
 		this.numTargetStates = numStates - 2; // excluding dummy states
 		this.numNodeFeatures = numNodeFeatures;
 		this.numEdgeFeatures = numEdgeFeatures;
+		this.numAllFeatures = 1 + numEdgeFeatures +
+				numNodeFeatures * numTargetStates;
 	}
 	
-	public void computeScores(int instanceID, double[][] nodeScores,
-			double[][] edgeScores, double[] weights) {
+	public int getNumFeatures() {
+		return numAllFeatures;
+	}
+	
+	public int getNumStates() {
+		return numStates;
+	}
+	
+	public int getInstanceLength(int instanceID) {
+		return nodeFeatures[instanceID].length;
+	}
+	
+	public void computeNodeScores(int instanceID, double[][] nodeScores,
+			double[] weights) {
 		int length = nodeFeatures[instanceID].length;
 		for (int i = 0; i < length; i++) {
 			for (int j = 0; j < numTargetStates; j++) {
 				nodeScores[i][j] = computeNodeScore(instanceID, i, j, weights);
 			}
 		}
+	}
+	
+	public void computeEdgeScores(double[][] edgeScores, double[] weights) {
 		for (int i = 0; i < numStates; i++) { 
 			for (int j = 0; j < numStates; j++) {
 				edgeScores[i][j] = computeEdgeScore(i, j, weights);
@@ -41,6 +59,7 @@ public class SequentialFeatures {
 	public double computeNodeScore(int instanceID, int position, int stateID,
 			double[] weights) {
 		// bias + edge features + node features * (previous states)
+		// not defined for dummy states
 		int offset = 1 + numEdgeFeatures + stateID * numNodeFeatures;
 		return nodeFeatures[instanceID][position].dotProduct(weights, offset);
 	}

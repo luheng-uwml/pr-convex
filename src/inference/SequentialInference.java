@@ -5,7 +5,7 @@ public class SequentialInference {
 	private int S0, SN, numTargetStates;
 	private double[] sTemp;
 	
-	public SequentialInference(int numStates, int maxInstanceLength) {
+	public SequentialInference(int maxInstanceLength, int numStates) {
 		alpha = new double[maxInstanceLength + 1][numStates];
 		beta = new double[maxInstanceLength + 1][numStates];
 		sTemp = new double[numStates + 1];
@@ -14,6 +14,18 @@ public class SequentialInference {
 		// FIXME: this is hacky, fix this.
 		S0 = numStates - 2;
 		SN = numStates - 1;
+	}
+	
+	public double computeLabelLikelihood(double[][] nodeScores,
+			double[][] edgeScores, double logNorm, int[] labels) {
+		int length = labels.length;
+		double logLikelihood = - logNorm + nodeScores[0][labels[0]] +
+				edgeScores[labels[0]][S0] + edgeScores[SN][labels[length - 1]];
+		for (int i = 1; i < length; i++) {
+			logLikelihood += nodeScores[i][labels[i]] +
+					edgeScores[labels[i]][labels[i-1]];
+		}
+		return logLikelihood;
 	}
 	
 	/* The forward-backword algorithm
