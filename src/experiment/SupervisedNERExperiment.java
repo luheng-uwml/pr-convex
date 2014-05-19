@@ -8,6 +8,7 @@ import data.NERCorpus;
 import data.NERSequence;
 import feature.NERFeatureExtractor;
 import feature.SequentialFeatures;
+import gnu.trove.list.array.TIntArrayList;
 
 public class SupervisedNERExperiment {
 	
@@ -32,18 +33,28 @@ public class SupervisedNERExperiment {
 		allInstances.addAll(corpusTrain.instances);
 		allInstances.addAll(corpusDev.instances);
 		
-		int numLabeled = corpusTrain.instances.size();
+		int numTrains = corpusTrain.instances.size();
 		int[][] labels = new int[allInstances.size()][];
-		for (int i = 0; i < numLabeled; i++) {
-			labels[i] = corpusTrain.instances.get(i).getLabels();
+		TIntArrayList trainList = new TIntArrayList(),
+					  devList = new TIntArrayList();
+		for (int i = 0; i < allInstances.size(); i++) {
+			labels[i] = i < numTrains ? corpusTrain.instances.get(i).getLabels() :
+				corpusDev.instances.get(i-numTrains).getLabels();
+			if (i < numTrains) {
+				trainList.add(i);
+			} else if (i >= 1000) {//numTrains) {
+				devList.add(i);
+			}
 		}
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				allInstances, 10);
+				allInstances, 3);
 		extractor.printInfo();
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
 		BatchGradientDescent optimizer = new BatchGradientDescent(features,
-				labels, eval, 0.01, 0.001, 500);
+				labels, trainList.toArray(), devList.toArray(), 
+				eval, 0.01, 1e-5, 200);
 		optimizer.optimize();
+		optimizer.testModel();
 	}
 }

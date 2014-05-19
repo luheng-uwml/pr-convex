@@ -104,7 +104,11 @@ public class NERFeatureExtractor {
 		String chunkTag = instance.getChunkTag(position);
 		String ltok = token.toLowerCase();
 		int tlen = token.length();
-		addFeature("LTOK=" + ltok, fvec, featDict, precompute);
+		addFeature("TOK=" + ltok, fvec, featDict, precompute);
+		addFeature("TOK_POS=" + ltok + "_" + posTag, fvec, featDict,
+				precompute);
+		addFeature("TOK_CHK=" + ltok + "_" + chunkTag, fvec, featDict,
+				precompute);
 		if (tlen > 2) {
 			addFeature("SUF2=" + ltok.substring(tlen - 2), fvec,
 					featDict, precompute);
@@ -128,10 +132,23 @@ public class NERFeatureExtractor {
 		}
 		addFeature("POS=" + posTag, fvec, featDict, precompute);
 		addFeature("CHK=" + chunkTag, fvec, featDict, precompute);
+		addFeature("POS_CHK=" + posTag + "_" + chunkTag, fvec, featDict,
+				precompute);
 		// ngram tags
 		if (position > 0) {
+			String tokL = instance.getToken(position - 1);
 			String posL = instance.getPosTag(position - 1);
 			String chunkL = instance.getChunkTag(position - 1);
+			addFeature("TOKL=" + tokL, fvec, featDict, precompute);
+			if (!tokL.startsWith(tokL.toLowerCase())) {
+				addFeature("IS_CAP_L", fvec, featDict, precompute);
+			}
+			if (RegexHelper.isNumerical(tokL)) {
+				addFeature("IS_NUM_L", fvec, featDict, precompute);
+			}
+			if (RegexHelper.isPunctuation(tokL)) {
+				addFeature("IS_PUN_L", fvec, featDict, precompute);
+			}
 			addFeature("POSL=" + posL, fvec, featDict, precompute);
 			addFeature("CHKL=" + chunkL, fvec, featDict, precompute);
 			addFeature("POS+L=" + posL + "," + posTag, fvec, featDict,
@@ -140,8 +157,19 @@ public class NERFeatureExtractor {
 					precompute);
 		}
 		if (position < instance.length - 1) {
+			String tokR = instance.getToken(position + 1);
 			String posR = instance.getPosTag(position + 1);
 			String chunkR = instance.getChunkTag(position + 1);
+			addFeature("TOKR=" + tokR, fvec, featDict, precompute);
+			if (!tokR.startsWith(tokR.toLowerCase())) {
+				addFeature("IS_CAP_R", fvec, featDict, precompute);
+			}
+			if (RegexHelper.isNumerical(tokR)) {
+				addFeature("IS_NUM_R", fvec, featDict, precompute);
+			}
+			if (RegexHelper.isPunctuation(tokR)) {
+				addFeature("IS_PUN_R", fvec, featDict, precompute);
+			}
 			addFeature("POSR=" + posR, fvec, featDict, precompute);
 			addFeature("CHKR=" + chunkR, fvec, featDict, precompute);
 			addFeature("POS+R=" + posTag + ", " + posR, fvec, featDict,

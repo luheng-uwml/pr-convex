@@ -3,7 +3,7 @@ package optimization;
 import data.Evaluator;
 import inference.SequentialInference;
 import feature.SequentialFeatures;
-import gnu.trove.list.array.TIntArrayList;
+//import gnu.trove.list.array.TIntArrayList;
 
 public class BatchGradientDescent {
 	SequentialFeatures features;
@@ -16,10 +16,13 @@ public class BatchGradientDescent {
 	int numFeatures, maxNumIterations, numStates, numTargetStates;
 	
 	public BatchGradientDescent(SequentialFeatures features, int[][] labels,
+			int[] trainList, int[] devList,
 			Evaluator eval, double lambda, double initialStepSize,
 			int maxNumIterations) {
 		this.features = features;
 		this.labels = labels;
+		this.trainList = trainList;
+		this.devList = devList;
 		this.eval = eval;
 		this.lambda = lambda;
 		this.initialStepSize = initialStepSize;
@@ -31,6 +34,7 @@ public class BatchGradientDescent {
 		numFeatures = features.getNumFeatures();
 		numStates = features.getNumStates();
 		numTargetStates = numStates - 2;
+		/*
 		TIntArrayList tempTrainList = new TIntArrayList();
 		TIntArrayList tempDevList = new TIntArrayList();
 		for (int i = 0; i < labels.length; i++) {
@@ -42,6 +46,7 @@ public class BatchGradientDescent {
 		}
 		trainList = tempTrainList.toArray();
 		devList = tempDevList.toArray();
+		*/
 		model= new SequentialInference(1000, numStates);
 		parameters = new double[numFeatures];
 		gradient = new double[numFeatures];
@@ -75,13 +80,17 @@ public class BatchGradientDescent {
 				System.out.println("succeed!");
 				break;
 			}
-			double currStepSize = this.backtrackingLineSearch(stepSize, 0.25, 0.5,
-					20);
+			double currStepSize = this.backtrackingLineSearch(stepSize, 0.5,
+					0.5, 20);
 			for (int i = 0; i < numFeatures; i++) {
 				parameters[i] -= currStepSize * gradient[i];
 			}
 			prevObjective = objective;
-			stepSize = currStepSize * 1.5;
+			stepSize = currStepSize * 2;
+			
+			if (iteration % 100 == 99) {
+				testModel();
+			}
 		}
 	}
 	
@@ -122,6 +131,35 @@ public class BatchGradientDescent {
 		System.out.println("neg log likelihood:\t" + negLikelihood);
 		objective = negLikelihood + 0.5 * lambda *
 				ArrayHelper.l2Norm(parameters);
+	}
+	
+	public void testModel() {
+		ArrayHelper.deepFill(runningAccuracy, 0.0);
+		// compute objective and likelihood
+		double[][] edgeScores = new double[numStates][numStates];
+		features.computeEdgeScores(edgeScores, parameters);
+		for (int i : devList) {
+			int length = features.getInstanceLength(i);
+			double[][] nodeScores = new double[length][numTargetStates];
+			double[][] nodeMarginals = new double[length][numStates];
+			double[][][] edgeMarginals =
+					new double[length + 1][numStates][numStates];
+			int[] decoded = new int[length];
+			features.computeNodeScores(i, nodeScores, parameters);
+			model.computeMarginals(nodeScores, edgeScores, 
+					nodeMarginals, edgeMarginals);
+			model.posteriorDecoding(nodeMarginals, decoded);
+			int[] result = eval.evaluate(labels[i], decoded);
+			runningAccuracy[0] += result[0];
+			runningAccuracy[1] += result[1];
+			runningAccuracy[2] += result[2];
+		}
+		double precision = runningAccuracy[2] / runningAccuracy[1];
+		double recall = runningAccuracy[2] / runningAccuracy[0];
+		double f1 = (precision + recall > 0) ?
+				(2 * precision * recall) / (precision + recall) : 0.0;
+		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
+				"\tF1::\t" + f1);
 	}
 	
 	private double computeObjective(double[] tempParameters) {
@@ -172,7 +210,6 @@ public class BatchGradientDescent {
 		}
 	}
 	
-	// try alpha = 0.5, beta = 0.9 ?
 	private double backtrackingLineSearch(double initStepSize, double alpha,
 			double beta, int maxIterations) {
 		double[] tempParameters = new double[numFeatures];
@@ -182,9 +219,11 @@ public class BatchGradientDescent {
 			for (int j = 0; j < numFeatures; j++) {
 				tempParameters[j] = parameters[j] - tStep * gradient[j];
 			}
-			System.out.println("paramters norm:\t" + ArrayHelper.l2Norm(tempParameters));
+			System.out.println("paramters norm:\t" +
+			ArrayHelper.l2Norm(tempParameters));
 			double tempObjective = computeObjective(tempParameters);
-			System.out.println("temp objective:\t" + tempObjective);
+			System.out.println("stepsize:\t" + tStep + "\ttemp objective:\t" + 
+					tempObjective);
 			if (tempObjective < objective - alpha * tStep * gradientNorm) {
 				return tStep;
 			}
