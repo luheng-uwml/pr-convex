@@ -17,6 +17,8 @@ public class SequentialFeatures {
 		this.numEdgeFeatures = numEdgeFeatures;
 		this.numAllFeatures = 1 + numEdgeFeatures +
 				numNodeFeatures * numTargetStates;
+		System.out.println("states:\t" + this.numStates);
+		System.out.println("features:\t" + this.numAllFeatures);
 	}
 	
 	public int getNumFeatures() {
@@ -66,16 +68,19 @@ public class SequentialFeatures {
 	
 	public double computeEdgeScore(int stateID, int prevStateID,
 			double[] weights) {
-		return edgeFeatures[stateID][prevStateID].dotProduct(weights);
+		SparseVector fvec = edgeFeatures[stateID][prevStateID];
+		return (fvec == null) ? 0 : fvec.dotProduct(weights);
 	}
 	
-	public void addToSoftCounts(int instanceID, int position, int stateID,
+	public void addToCounts(int instanceID, int position, int stateID,
 			int prevStateID, double[] counts, double weight) {
 		if (Double.isInfinite(weight) || Double.isNaN(weight)) {
 			return;
 		}
-		int offset = 1 + numEdgeFeatures + stateID * numNodeFeatures;
-		nodeFeatures[instanceID][position].addTo(counts, weight, offset);
+		if (stateID < numTargetStates) {
+			int offset = 1 + numEdgeFeatures + stateID * numNodeFeatures;
+			nodeFeatures[instanceID][position].addTo(counts, weight, offset);
+		}
 		edgeFeatures[stateID][prevStateID].addTo(counts, weight);
 	}
 }

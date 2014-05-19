@@ -1,48 +1,7 @@
 package inference;
 
 public class LatticeHelper {
-	public static void deepFill(double[] arr, int filler) {
-		for (int i = 0; i < arr.length; i++) {
-			arr[i] = filler;
-		}
-	}
-		
-	public static void deepFill(double[][] arr, double filler) {
-		for (int i = 0; i < arr.length; i++) {
-			for (int j = 0; j < arr[i].length; j++) {
-				arr[i][j] = filler;
-			}
-		}
-	}
-	
-	public static void deepFill(double[][][] arr, double filler) {
-		for (int i = 0; i < arr.length; i++) {
-			for (int j = 0; j < arr[i].length; j++) {
-				for (int k = 0; k < arr[i][j].length; k++) {
-					arr[i][j][k] = filler;
-				}
-			}
-		}
-	}
-	
-	public static void deepCopy(double[][] src, double[][] dest) {
-		for (int i = 0; i < src.length; i++) {
-			for (int j = 0; j < src[i].length; j++) {
-				dest[i][j] = src[i][j];
-			}
-		}
-	}
-	
-	public static void deepCopy(double[][][] src, double[][][] dest) {
-		for (int i = 0; i < src.length; i++) {
-			for (int j = 0; j < src[i].length; j++) {
-				for (int k = 0; k < src[i][j].length; k++) { 
-					dest[i][j][k] = src[i][j][k];
-				}
-			}
-		}
-	}
-	
+
 	public static int getMaxIndex(double[] p) {
 		int maxi = 0;
 		for (int i = 1; i < p.length; i++) {

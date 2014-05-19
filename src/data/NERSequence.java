@@ -24,6 +24,10 @@ public class NERSequence {
 		return retString;
 	}
 	
+	public int[] getLabels() {
+		return nerTags;
+	}
+	
 	public String getToken(int i) {
 		return corpus.tokenDict.getString(tokens[i]);
 	}

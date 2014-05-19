@@ -2,6 +2,7 @@ package experiment;
 
 import java.util.ArrayList;
 
+import optimization.BatchGradientDescent;
 import data.NERCorpus;
 import data.NERSequence;
 import feature.NERFeatureExtractor;
@@ -30,9 +31,17 @@ public class SupervisedNERExperiment {
 		allInstances.addAll(corpusTrain.instances);
 		allInstances.addAll(corpusDev.instances);
 		
+		int numLabeled = corpusTrain.instances.size();
+		int[][] labels = new int[allInstances.size()][];
+		for (int i = 0; i < numLabeled; i++) {
+			labels[i] = corpusTrain.instances.get(i).getLabels();
+		}
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				allInstances);
 		extractor.printInfo();
 		SequentialFeatures features = extractor.getSequentialFeatures();
+		BatchGradientDescent optimizer = new BatchGradientDescent(features,
+				labels, 1.0, 1e-5, 100);
+		optimizer.optimize();
 	}
 }
