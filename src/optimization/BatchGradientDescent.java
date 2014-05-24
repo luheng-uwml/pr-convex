@@ -34,19 +34,6 @@ public class BatchGradientDescent {
 		numFeatures = features.getNumFeatures();
 		numStates = features.getNumStates();
 		numTargetStates = numStates - 2;
-		/*
-		TIntArrayList tempTrainList = new TIntArrayList();
-		TIntArrayList tempDevList = new TIntArrayList();
-		for (int i = 0; i < labels.length; i++) {
-			if (labels[i] != null && labels[i].length > 0) {
-				tempTrainList.add(i);
-			} else {
-				tempDevList.add(i);
-			}
-		}
-		trainList = tempTrainList.toArray();
-		devList = tempDevList.toArray();
-		*/
 		model= new SequentialInference(1000, numStates);
 		parameters = new double[numFeatures];
 		gradient = new double[numFeatures];
@@ -86,7 +73,7 @@ public class BatchGradientDescent {
 				parameters[i] -= currStepSize * gradient[i];
 			}
 			prevObjective = objective;
-			stepSize = currStepSize * 2;
+			stepSize = currStepSize * 1.5;
 			
 			if (iteration % 100 == 99) {
 				testModel();

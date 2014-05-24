@@ -21,6 +21,11 @@ public class SequentialFeatures {
 		System.out.println("features:\t" + this.numAllFeatures);
 	}
 	
+
+	public int getNumInstances() {
+		return nodeFeatures.length;
+	}
+	
 	public int getNumFeatures() {
 		return numAllFeatures;
 	}

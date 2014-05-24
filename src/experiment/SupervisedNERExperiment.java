@@ -42,18 +42,18 @@ public class SupervisedNERExperiment {
 				corpusDev.instances.get(i-numTrains).getLabels();
 			if (i < numTrains) {
 				trainList.add(i);
-			} else if (i >= 1000) {//numTrains) {
+			} else if (i >= numTrains) {
 				devList.add(i);
 			}
 		}
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				allInstances, 3);
+				allInstances, 5);
 		extractor.printInfo();
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
 		BatchGradientDescent optimizer = new BatchGradientDescent(features,
 				labels, trainList.toArray(), devList.toArray(), 
-				eval, 0.01, 1e-5, 200);
+				eval, 1e-4, 1e-5, 1000);
 		optimizer.optimize();
 		optimizer.testModel();
 	}
