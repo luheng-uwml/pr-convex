@@ -60,7 +60,7 @@ public class BatchGradientDescent {
 					
 			System.out.println("ITER::\t" + iteration + "\tOBJ::\t" +
 					objective + "\tPREV::\t" + prevObjective + "\tGRAD::\t" +
-					ArrayHelper.l2Norm(gradient) + "\tPREC::\t" + precision +
+					ArrayHelper.l2NormSquared(gradient) + "\tPREC::\t" + precision +
 					"\tREC::\t" + recall + "\tF1::\t" + f1);
 			
 			if (Math.abs(objective - prevObjective) / prevObjective < 1e-5) {
@@ -117,7 +117,7 @@ public class BatchGradientDescent {
 		}
 		System.out.println("neg log likelihood:\t" + negLikelihood);
 		objective = negLikelihood + 0.5 * lambda *
-				ArrayHelper.l2Norm(parameters);
+				ArrayHelper.l2NormSquared(parameters);
 	}
 	
 	public void testModel() {
@@ -166,7 +166,7 @@ public class BatchGradientDescent {
 					edgeScores, logNorm, labels[i]);
 		}
 		return negLikelihood + 0.5 * lambda *
-				ArrayHelper.l2Norm(tempParameters);
+				ArrayHelper.l2NormSquared(tempParameters);
 	}
 	
 	private void computeHardCounts(int instanceID, double[] counts) {
@@ -201,13 +201,13 @@ public class BatchGradientDescent {
 			double beta, int maxIterations) {
 		double[] tempParameters = new double[numFeatures];
 		double tStep = initStepSize;
-		double gradientNorm = ArrayHelper.l2Norm(gradient);
+		double gradientNorm = ArrayHelper.l2NormSquared(gradient);
 		for (int i = 0; i < maxIterations; i++) {
 			for (int j = 0; j < numFeatures; j++) {
 				tempParameters[j] = parameters[j] - tStep * gradient[j];
 			}
 			System.out.println("paramters norm:\t" +
-			ArrayHelper.l2Norm(tempParameters));
+			ArrayHelper.l2NormSquared(tempParameters));
 			double tempObjective = computeObjective(tempParameters);
 			System.out.println("stepsize:\t" + tStep + "\ttemp objective:\t" + 
 					tempObjective);

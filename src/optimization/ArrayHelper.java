@@ -55,7 +55,7 @@ public class ArrayHelper {
 		}
 	}
 	
-	public static double l2Norm(double[] arr) {
+	public static double l2NormSquared(double[] arr) {
 		double norm = 0;
 		for (int i = 0; i < arr.length; i++) {
 			norm += arr[i] * arr[i];
