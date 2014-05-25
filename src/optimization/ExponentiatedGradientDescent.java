@@ -80,18 +80,16 @@ public class ExponentiatedGradientDescent {
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tPREC::\t" + precision + "\tREC::\t" + recall +
 					"\tF1::\t" + f1);
-			
+			/*
 			if (Math.abs((objective - prevObjective) / prevObjective) < 1e-5) {
 				System.out.println("succeed!");
 				break;
 			}
-			//double currStepSize = this.backtrackingLineSearch(stepSize, 0.5,
-			//		0.5, 20);
+			*/
 			updateParameters(stepSize);
 			
 			prevObjective = objective;
-			stepSize = Math.max(initialStepSize / (iteration + 1), 1e-4);
-			//stepSize = currStepSize * 1.5;
+			stepSize = Math.max(initialStepSize / (iteration + 1), 1e-5);
 			/*
 			if (iteration % 100 == 99) {
 				testModel();

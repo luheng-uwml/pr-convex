@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import optimization.BatchGradientDescent;
 import optimization.ExponentiatedGradientDescent;
+import optimization.OnlineExponentiatedGradientDescent;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
@@ -41,8 +42,8 @@ public class SupervisedNERExperiment {
 		for (int i = 0; i < allInstances.size(); i++) {
 			labels[i] = i < numTrains ? corpusTrain.instances.get(i).getLabels() :
 				corpusDev.instances.get(i-numTrains).getLabels();
-			if (i < numTrains) {
-			//if (i < 1000) {
+			//if (i < numTrains) {
+			if (i < 1000) {
 				trainList.add(i);
 			} else if (i >= numTrains) {
 				devList.add(i);
@@ -58,11 +59,18 @@ public class SupervisedNERExperiment {
 				labels, trainList.toArray(), devList.toArray(), 
 				eval, 1e-4, 1e-5, 1000);
 		*/
+		
 		ExponentiatedGradientDescent optimizer =
 				new ExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 1e-2,
-						0.2, 1000);
+						trainList.toArray(), devList.toArray(),  eval, 1e-4,
+						0.03, 1000);
 		
+		/*
+		OnlineExponentiatedGradientDescent optimizer =
+				new OnlineExponentiatedGradientDescent(features, labels,
+						trainList.toArray(), devList.toArray(),  eval, 1e-4,
+						1e-2, 1000, 12345);
+		*/
 		optimizer.optimize();
 		//optimizer.testModel();
 	}

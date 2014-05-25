@@ -33,7 +33,7 @@ public class SequentialInference {
 	 * 		edgeScoers [current tag][previous tag]
 	 */
 	public double computeMarginals(double[][] nodeScores, double[][] edgeScores,
-			double[][] nodeMarginal, double[][][] edgeMarginal) {
+			double[][] nodeMarginals, double[][][] edgeMarginals) {
 		int length = nodeScores.length;
 		for (int s = 0; s < numTargetStates; s++) { 
 			alpha[0][s] = edgeScores[s][S0] + nodeScores[0][s]; 
@@ -69,17 +69,20 @@ public class SequentialInference {
 				beta[i-1][sp] = LatticeHelper.logsum(sTemp, tlen);
 			}
 		}
-		for (int i = 0; i < length; i++) {
-			for (int s = 0; s < numTargetStates; s++) {
-				nodeMarginal[i][s] = Math.exp(alpha[i][s] + beta[i][s] -
-					logNorm);
-			}	
+		if (nodeMarginals != null) {
+			for (int i = 0; i < length; i++) {
+				for (int s = 0; s < numTargetStates; s++) {
+					nodeMarginals[i][s] = Math.exp(alpha[i][s] + beta[i][s] -
+						logNorm);
+				}	
+			}
 		}
 		for (int s = 0; s < numTargetStates; s++) {
-			edgeMarginal[0][s][S0] = nodeMarginal[0][s];
+			edgeMarginals[0][s][S0] = Math.exp(alpha[0][s] + beta[0][s] -
+					logNorm);
 			for (int i = 1; i < length; i++) {
 				for (int sp = 0; sp < numTargetStates; sp++) {
-					edgeMarginal[i][s][sp] = Math.exp(
+					edgeMarginals[i][s][sp] = Math.exp(
 						alpha[i-1][sp] + beta[i][s] + edgeScores[s][sp] +
 						nodeScores[i][s] - logNorm);
 				}

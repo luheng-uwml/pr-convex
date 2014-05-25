@@ -31,4 +31,24 @@ public class OptimizationHelper {
 			}
 		}
 	}
+	
+	public static void computeSoftCounts(SequentialFeatures features,
+			int instanceID, double[][][] edgeMarginals, double[] counts,
+			double scale) {
+		int length = features.getInstanceLength(instanceID);
+		for (int s = 0; s < features.numTargetStates; s++) {
+			features.addToCounts(instanceID, 0, s, features.S0, counts,
+					scale * edgeMarginals[0][s][features.S0]);
+			features.addToCounts(instanceID, length, features.SN, s, counts,
+					scale * edgeMarginals[length][features.SN][s]);
+		}
+		for (int i = 1; i < length; i++) {
+			for (int s = 0; s < features.numTargetStates; s++) {
+				for (int sp = 0; sp < features.numTargetStates; sp++) {
+					features.addToCounts(instanceID, i, s, sp, counts,
+							scale * edgeMarginals[i][s][sp]);
+				}
+			}
+		}
+	}
 }
