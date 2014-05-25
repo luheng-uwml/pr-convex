@@ -13,7 +13,7 @@ public class OnlineExponentiatedGradientDescent {
 	int[][] labels;
 	int[] trainList, devList;
 	double[] parameters, empiricalCounts, expectedCounts, runningAccuracy;
-	double[][] edgeScores, edgeGradient; // pre-tag x current-tag
+	double[][][] edgeScores, edgeGradient; // pre-tag x current-tag
 	double[][][] nodeScores, nodeGradient; // sentence-id x sentence-length x current-tag
 	double[][][] marginalsOld;
 	double[] logNorm, entropy; 
@@ -46,8 +46,8 @@ public class OnlineExponentiatedGradientDescent {
 		parameters = new double[numFeatures];
 		empiricalCounts = new double[numFeatures];
 		expectedCounts = new double[numFeatures];
-		edgeScores = new double[numStates][numStates];
-		edgeGradient = new double[numStates][numStates];
+		edgeScores = new double[numInstances][numStates][numStates];
+		edgeGradient = new double[numInstances][numStates][numStates];
 		nodeScores = new double[numInstances][][];
 		nodeGradient = new double[numInstances][][];
 		logNorm = new double[numInstances];
@@ -80,9 +80,9 @@ public class OnlineExponentiatedGradientDescent {
 			double[][][] edgeMarginals =
 					new double[length + 1][numStates][numStates];
 			logNorm[instanceID] = model.computeMarginals(nodeScores[instanceID],
-					edgeScores, null, edgeMarginals);
+					edgeScores[instanceID], null, edgeMarginals);
 			entropy[instanceID] = model.computeEntropy(nodeScores[instanceID],
-					edgeScores, edgeMarginals, logNorm[instanceID]);
+					edgeScores[instanceID], edgeMarginals, logNorm[instanceID]);
 			OptimizationHelper.computeSoftCounts(features, instanceID,
 						edgeMarginals, parameters, -1.0);
 			objective -= entropy[instanceID];
@@ -101,23 +101,13 @@ public class OnlineExponentiatedGradientDescent {
 				updateGradient(instanceID);
 				updateDualParameters(instanceID, stepSize);
 				updateObjective(instanceID);
-				
-				// compute accuracy
-				/*
-				double precision = runningAccuracy[2] / runningAccuracy[1];
-				double recall = runningAccuracy[2] / runningAccuracy[0];
-				double f1 = (precision + recall > 0) ?
-						(2 * precision * recall) / (precision + recall) : 0.0;
-				*/
 			}
 			System.out.println("ITER::\t" + iteration + "\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective + "\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
-					/*+
-					"\tPREC::\t" + precision + "\tREC::\t" + recall +
-					"\tF1::\t" + f1);*/
-			stepSize = Math.max(initialStepSize / (iteration + 1), 1e-5);
+			
 			prevObjective = objective;
+			stepSize = Math.max(initialStepSize / (iteration + 1), 1e-5);
 			/*
 			if (Math.abs((objective - prevObjective) / prevObjective) < 1e-5) {
 				System.out.println("succeed!");
@@ -130,15 +120,16 @@ public class OnlineExponentiatedGradientDescent {
 	private void backupMarginals(int instanceID) {
 		int length = features.getInstanceLength(instanceID);
 		marginalsOld = new double[length + 1][numStates][numStates];
-		model.computeMarginals(nodeScores[instanceID], edgeScores, null,
-				marginalsOld);
+		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
+				null, marginalsOld);
 	}
 	
 	private void updateDualParameters(int instanceID, double stepSize) {
 		int length = features.getInstanceLength(instanceID);
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
-				edgeScores[i][j] -= stepSize * edgeGradient[i][j];
+				edgeScores[instanceID][i][j] -= stepSize *
+						edgeGradient[instanceID][i][j];
 			}
 		}
 		for (int i = 0; i < length; i++) {
@@ -155,28 +146,24 @@ public class OnlineExponentiatedGradientDescent {
 				new double[length + 1][numStates][numStates];
 		double entropyOld = entropy[instanceID]; 
 		logNorm[instanceID] = model.computeMarginals(nodeScores[instanceID],
-				edgeScores, null, edgeMarginals);
+				edgeScores[instanceID], null, edgeMarginals);
 		entropy[instanceID] = model.computeEntropy(nodeScores[instanceID],
-				edgeScores, edgeMarginals, logNorm[instanceID]);
+				edgeScores[instanceID], edgeMarginals, logNorm[instanceID]);
 		// update objective
-		//System.out.println("logNorm::\t" + logNorm[instanceID] + "\tEntropy::\t" + entropy[instanceID]);
 		objective += entropyOld  - entropy[instanceID];
 		objective -= 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
-		if (marginalsOld != null) {
-			OptimizationHelper.computeSoftCounts(features, instanceID,
+		OptimizationHelper.computeSoftCounts(features, instanceID,
 					marginalsOld, parameters);
-		}
 		OptimizationHelper.computeSoftCounts(features, instanceID,
 					edgeMarginals, parameters, -1.0);
-		// update objective again ..
 		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
 	}
 	
 	private void updateGradient(int instanceID) {
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
-				edgeGradient[i][j] = edgeScores[i][j] - lambda *
-						features.computeEdgeScore(i, j, parameters);
+				edgeGradient[instanceID][i][j] = edgeScores[instanceID][i][j] -
+						lambda * features.computeEdgeScore(i, j, parameters);
 			}
 		}
 		int length = features.getInstanceLength(instanceID);

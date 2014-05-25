@@ -58,19 +58,20 @@ public class SupervisedNERExperiment {
 		BatchGradientDescent optimizer = new BatchGradientDescent(features,
 				labels, trainList.toArray(), devList.toArray(), 
 				eval, 1e-4, 1e-5, 1000);
-		*/
 		
+		*/
+		/*
 		ExponentiatedGradientDescent optimizer =
 				new ExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 1e-4,
-						0.03, 1000);
+						trainList.toArray(), devList.toArray(),  eval, 1e-2,
+						0.1, 1000);
 		
-		/*
+		*/
 		OnlineExponentiatedGradientDescent optimizer =
 				new OnlineExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 1e-4,
-						1e-2, 1000, 12345);
-		*/
+						trainList.toArray(), devList.toArray(),  eval, 1e-2,
+						0.1, 1000, 12345);
+		
 		optimizer.optimize();
 		//optimizer.testModel();
 	}
