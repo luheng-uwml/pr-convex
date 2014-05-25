@@ -91,6 +91,11 @@ public class OnlineExponentiatedGradientDescent {
 		System.out.println("initial objective::\t" + objective);
 	}
 	
+	public void computeAccuracy(int[] instList) {
+		OptimizationHelper.testModel(features, eval, labels, instList,
+				parameters);
+	}
+	
 	public void optimize() {
 		double stepSize = initialStepSize;
 		double prevObjective = Double.POSITIVE_INFINITY;
@@ -105,9 +110,13 @@ public class OnlineExponentiatedGradientDescent {
 			System.out.println("ITER::\t" + iteration + "\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective + "\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
-			
+			validate();
+			computeAccuracy(devList);
 			prevObjective = objective;
-			stepSize = Math.max(initialStepSize / (iteration + 1), 1e-5);
+			if (iteration > 100) {
+				stepSize = Math.max(initialStepSize / Math.sqrt(iteration),
+						1e-5);
+			}
 			/*
 			if (Math.abs((objective - prevObjective) / prevObjective) < 1e-5) {
 				System.out.println("succeed!");
@@ -174,5 +183,32 @@ public class OnlineExponentiatedGradientDescent {
 					features.computeNodeScore(instanceID, i, j, parameters);
 			}
 		}
+	}
+	
+	private void validate() {
+		double[] runningAccuracy = new double[3];
+		ArrayHelper.deepFill(runningAccuracy, 0.0);
+		// compute objective and likelihood
+		int numStates = features.numStates;
+		for (int i : trainList) {
+			int length = features.getInstanceLength(i);
+			double[][] nodeMarginals = new double[length][numStates];
+			double[][][] edgeMarginals =
+					new double[length + 1][numStates][numStates];
+			int[] decoded = new int[length];
+			model.computeMarginals(nodeScores[i], edgeScores[i], 
+					nodeMarginals, edgeMarginals);
+			model.posteriorDecoding(nodeMarginals, decoded);
+			int[] result = eval.evaluate(labels[i], decoded);
+			runningAccuracy[0] += result[0];
+			runningAccuracy[1] += result[1];
+			runningAccuracy[2] += result[2];
+		}
+		double precision = runningAccuracy[2] / runningAccuracy[1];
+		double recall = runningAccuracy[2] / runningAccuracy[0];
+		double f1 = (precision + recall > 0) ?
+				(2 * precision * recall) / (precision + recall) : 0.0;
+		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
+				"\tF1::\t" + f1);
 	}
 }

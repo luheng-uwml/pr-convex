@@ -77,7 +77,8 @@ public class BatchGradientDescent {
 			stepSize = currStepSize * 1.5;
 			
 			if (iteration % 100 == 99) {
-				testModel();
+				OptimizationHelper.testModel(features, eval, labels, devList,
+						parameters);
 			}
 		}
 	}
@@ -120,35 +121,6 @@ public class BatchGradientDescent {
 		System.out.println("neg log likelihood:\t" + negLikelihood);
 		objective = negLikelihood + 0.5 * lambda *
 				ArrayHelper.l2NormSquared(parameters);
-	}
-	
-	public void testModel() {
-		ArrayHelper.deepFill(runningAccuracy, 0.0);
-		// compute objective and likelihood
-		double[][] edgeScores = new double[numStates][numStates];
-		features.computeEdgeScores(edgeScores, parameters);
-		for (int i : devList) {
-			int length = features.getInstanceLength(i);
-			double[][] nodeScores = new double[length][numTargetStates];
-			double[][] nodeMarginals = new double[length][numStates];
-			double[][][] edgeMarginals =
-					new double[length + 1][numStates][numStates];
-			int[] decoded = new int[length];
-			features.computeNodeScores(i, nodeScores, parameters);
-			model.computeMarginals(nodeScores, edgeScores, 
-					nodeMarginals, edgeMarginals);
-			model.posteriorDecoding(nodeMarginals, decoded);
-			int[] result = eval.evaluate(labels[i], decoded);
-			runningAccuracy[0] += result[0];
-			runningAccuracy[1] += result[1];
-			runningAccuracy[2] += result[2];
-		}
-		double precision = runningAccuracy[2] / runningAccuracy[1];
-		double recall = runningAccuracy[2] / runningAccuracy[0];
-		double f1 = (precision + recall > 0) ?
-				(2 * precision * recall) / (precision + recall) : 0.0;
-		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
-				"\tF1::\t" + f1);
 	}
 	
 	private double computeObjective(double[] tempParameters) {
