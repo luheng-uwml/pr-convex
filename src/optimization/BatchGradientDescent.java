@@ -31,9 +31,9 @@ public class BatchGradientDescent {
 	}
 	
 	public void initialize() {
-		numFeatures = features.getNumFeatures();
-		numStates = features.getNumStates();
-		numTargetStates = numStates - 2;
+		numFeatures = features.numAllFeatures;
+		numStates = features.numStates;
+		numTargetStates = features.numTargetStates;
 		model= new SequentialInference(1000, numStates);
 		parameters = new double[numFeatures];
 		gradient = new double[numFeatures];
@@ -42,7 +42,8 @@ public class BatchGradientDescent {
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
 		// compute empirical counts from labels
 		for (int i : trainList) {
-			computeHardCounts(i, empiricalCounts);
+			OptimizationHelper.computeHardCounts(features, labels, i,
+					empiricalCounts);
 		}
 		runningAccuracy = new double[3]; // Precision, Recall, F1
 	}
@@ -107,7 +108,8 @@ public class BatchGradientDescent {
 					nodeMarginals, edgeMarginals);
 			negLikelihood -= model.computeLabelLikelihood(nodeScores,
 					edgeScores, logNorm, labels[i]);
-			computeSoftCounts(i, edgeMarginals, gradient);
+			OptimizationHelper.computeSoftCounts(features, i, edgeMarginals,
+					gradient);
 			// evaluate
 			model.posteriorDecoding(nodeMarginals, decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
@@ -167,34 +169,6 @@ public class BatchGradientDescent {
 		}
 		return negLikelihood + 0.5 * lambda *
 				ArrayHelper.l2NormSquared(tempParameters);
-	}
-	
-	private void computeHardCounts(int instanceID, double[] counts) {
-		int length = features.getInstanceLength(instanceID);
-		for (int i = 0; i < length; i++) {
-			int s = labels[instanceID][i];
-			int sp = (i == 0) ? model.S0 : labels[instanceID][i - 1];
-			features.addToCounts(instanceID, i, s, sp, counts, 1.0);
-		}
-	}
-	
-	private void computeSoftCounts(int instanceID, double[][][] edgeMarginals,
-			double[] counts) {
-		int length = features.getInstanceLength(instanceID);
-		for (int s = 0; s < numTargetStates; s++) {
-			features.addToCounts(instanceID, 0, s, model.S0, counts,
-					edgeMarginals[0][s][model.S0]);
-			features.addToCounts(instanceID, length, model.SN, s, counts,
-					edgeMarginals[length][model.SN][s]);
-		}
-		for (int i = 1; i < length; i++) {
-			for (int s = 0; s < numTargetStates; s++) {
-				for (int sp = 0; sp < numTargetStates; sp++) {
-					features.addToCounts(instanceID, i, s, sp, counts,
-							edgeMarginals[i][s][sp]);
-				}
-			}
-		}
 	}
 	
 	private double backtrackingLineSearch(double initStepSize, double alpha,

@@ -42,6 +42,7 @@ public class SupervisedNERExperiment {
 			labels[i] = i < numTrains ? corpusTrain.instances.get(i).getLabels() :
 				corpusDev.instances.get(i-numTrains).getLabels();
 			if (i < numTrains) {
+			//if (i < 1000) {
 				trainList.add(i);
 			} else if (i >= numTrains) {
 				devList.add(i);
@@ -59,8 +60,8 @@ public class SupervisedNERExperiment {
 		*/
 		ExponentiatedGradientDescent optimizer =
 				new ExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 1e-4,
-						0.1, 1000);
+						trainList.toArray(), devList.toArray(),  eval, 1e-2,
+						0.2, 1000);
 		
 		optimizer.optimize();
 		//optimizer.testModel();

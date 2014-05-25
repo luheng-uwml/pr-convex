@@ -2,7 +2,7 @@ package inference;
 
 public class SequentialInference {
 	public double[][] alpha, beta;
-	public int S0, SN, numTargetStates;
+	private int S0, SN, numTargetStates;
 	private double[] sTemp;
 	
 	public SequentialInference(int maxInstanceLength, int numStates) {
@@ -12,8 +12,8 @@ public class SequentialInference {
 		//this.numStates = numStates;
 		this.numTargetStates = numStates - 2;
 		// FIXME: this is hacky, fix this.
-		S0 = numStates - 2;
-		SN = numStates - 1;
+		this.S0 = numStates - 2;
+		this.SN = numStates - 1;
 	}
 	
 	public double computeLabelLikelihood(double[][] nodeScores,

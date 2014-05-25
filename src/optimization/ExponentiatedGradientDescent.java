@@ -10,7 +10,7 @@ public class ExponentiatedGradientDescent {
 	Evaluator eval;
 	int[][] labels;
 	int[] trainList, devList;
-	double[] parameters, empiricalCounts, runningAccuracy;
+	double[] parameters, empiricalCounts, expectedCounts, runningAccuracy;
 	double[][] edgeScores, edgeGradient; // pre-tag x current-tag
 	double[][][] nodeScores, nodeGradient; // sentence-id x sentence-length x current-tag
 	double[] logNorms; 
@@ -26,20 +26,21 @@ public class ExponentiatedGradientDescent {
 		this.trainList = trainList;
 		this.devList = devList;
 		this.eval = eval;
-		this.lambda = lambda;
+		this.lambda = 1.0 / lambda;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		initialize();
 	}
 	
 	private void initialize() {
-		numInstances = features.getNumInstances();
-		numFeatures = features.getNumFeatures();
-		numStates = features.getNumStates();
-		numTargetStates = numStates - 2;
+		numInstances = features.numInstances;
+		numFeatures = features.numAllFeatures;
+		numStates = features.numStates;
+		numTargetStates = features.numTargetStates;
 		model= new SequentialInference(1000, numStates);
 		parameters = new double[numFeatures];
 		empiricalCounts = new double[numFeatures];
+		expectedCounts = new double[numFeatures];
 		edgeScores = new double[numStates][numStates];
 		edgeGradient = new double[numStates][numStates];
 		nodeScores = new double[numInstances][][];
@@ -53,10 +54,12 @@ public class ExponentiatedGradientDescent {
 		}
 		ArrayHelper.deepFill(parameters, 0.0);
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
+		ArrayHelper.deepFill(expectedCounts, 0.0);
 		ArrayHelper.deepFill(edgeScores, 0.0);
 		ArrayHelper.deepFill(edgeGradient, 0.0);
 		for (int i : trainList) {
-			computeHardCounts(i, empiricalCounts);
+			OptimizationHelper.computeHardCounts(features, labels, i,
+					empiricalCounts);
 		}
 		runningAccuracy = new double[3]; // Precision, Recall, F1
 	}
@@ -72,21 +75,22 @@ public class ExponentiatedGradientDescent {
 			double f1 = (precision + recall > 0) ?
 					(2 * precision * recall) / (precision + recall) : 0.0;
 					
-			System.out.println("ITER::\t" + iteration + "\tOBJ::\t" +
-					objective + "\tPREV::\t" + prevObjective +
+			System.out.println("ITER::\t" + iteration + "\tSTEP:\t" + stepSize +
+					"\tOBJ::\t" + objective + "\tPREV::\t" + prevObjective +
+					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tPREC::\t" + precision + "\tREC::\t" + recall +
 					"\tF1::\t" + f1);
 			
-			if (Math.abs(objective - prevObjective) / prevObjective < 1e-5) {
+			if (Math.abs((objective - prevObjective) / prevObjective) < 1e-5) {
 				System.out.println("succeed!");
 				break;
 			}
 			//double currStepSize = this.backtrackingLineSearch(stepSize, 0.5,
 			//		0.5, 20);
-			//updateParameters(stepSize / Math.sqrt(iteration + 1));
 			updateParameters(stepSize);
 			
 			prevObjective = objective;
+			stepSize = Math.max(initialStepSize / (iteration + 1), 1e-4);
 			//stepSize = currStepSize * 1.5;
 			/*
 			if (iteration % 100 == 99) {
@@ -99,12 +103,9 @@ public class ExponentiatedGradientDescent {
 	// gradient = u_{ir} + \lambda * f(x_i, r) x (E[f] - \tilde{f})
 	private void updateObjectiveAndGradient() {
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
-		double negEntropy = 0;
-		for (int i = 0; i < numFeatures; i++) {
-			parameters[i] = - empiricalCounts[i];
-		}
+		ArrayHelper.deepFill(expectedCounts, 0.0);
+		double totalEntropy = 0;
 		// marginalize and compute entropy for each training instance
-		// update primal parameters \theta = E[f] - \tilde{f}
 		for (int i : trainList) {
 			int length = features.getInstanceLength(i);
 			double[][] nodeMarginals = new double[length][numStates];
@@ -115,8 +116,9 @@ public class ExponentiatedGradientDescent {
 					nodeMarginals, edgeMarginals);
 			double entropy = model.computeEntropy(nodeScores[i], edgeScores,
 					edgeMarginals, logNorm);
-			computeSoftCounts(i, edgeMarginals, parameters);
-			negEntropy -= entropy;
+			OptimizationHelper.computeSoftCounts(features, i, edgeMarginals,
+					expectedCounts);
+			totalEntropy += entropy;
 			// compute accuracy on training instance
 			model.posteriorDecoding(nodeMarginals, decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
@@ -124,13 +126,17 @@ public class ExponentiatedGradientDescent {
 			runningAccuracy[1] += result[1];
 			runningAccuracy[2] += result[2];
 		}
+		// update primal parameters \theta = Emp[f] - E_q[f]
+		for (int i = 0; i < numFeatures; i++) {
+			parameters[i] = empiricalCounts[i] - expectedCounts[i];
+		}
 		// compute objective
-		objective = negEntropy +
+		objective = - totalEntropy +
 				0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
 		// update dual gradient for each node and edge factor
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
-				edgeGradient[i][j] = edgeScores[i][j] + lambda *
+				edgeGradient[i][j] = edgeScores[i][j] - lambda *
 						features.computeEdgeScore(i, j, parameters);
 			}
 		}
@@ -138,7 +144,7 @@ public class ExponentiatedGradientDescent {
 			int length = features.getInstanceLength(i);
 			for (int j = 0; j < length; j++) {
 				for (int k = 0; k < numTargetStates; k++) {
-					nodeGradient[i][j][k] = nodeScores[i][j][k] + lambda *
+					nodeGradient[i][j][k] = nodeScores[i][j][k] - lambda *
 							features.computeNodeScore(i, j, k, parameters);
 				}
 			}
@@ -156,34 +162,6 @@ public class ExponentiatedGradientDescent {
 			for (int j = 0; j < length; j++) {
 				for (int k = 0; k < numTargetStates; k++) {
 					nodeScores[i][j][k] -= stepSize * nodeGradient[i][j][k];
-				}
-			}
-		}
-	}
-	
-	private void computeHardCounts(int instanceID, double[] counts) {
-		int length = features.getInstanceLength(instanceID);
-		for (int i = 0; i < length; i++) {
-			int s = labels[instanceID][i];
-			int sp = (i == 0) ? model.S0 : labels[instanceID][i - 1];
-			features.addToCounts(instanceID, i, s, sp, counts, 1.0);
-		}
-	}
-	
-	private void computeSoftCounts(int instanceID, double[][][] edgeMarginals,
-			double[] counts) {
-		int length = features.getInstanceLength(instanceID);
-		for (int s = 0; s < numTargetStates; s++) {
-			features.addToCounts(instanceID, 0, s, model.S0, counts,
-					edgeMarginals[0][s][model.S0]);
-			features.addToCounts(instanceID, length, model.SN, s, counts,
-					edgeMarginals[length][model.SN][s]);
-		}
-		for (int i = 1; i < length; i++) {
-			for (int s = 0; s < numTargetStates; s++) {
-				for (int sp = 0; sp < numTargetStates; sp++) {
-					features.addToCounts(instanceID, i, s, sp, counts,
-							edgeMarginals[i][s][sp]);
 				}
 			}
 		}

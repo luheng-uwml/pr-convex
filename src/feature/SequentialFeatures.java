@@ -3,35 +3,25 @@ package feature;
 public class SequentialFeatures {
 	SparseVector[][] nodeFeatures; // instances x  postions  
 	SparseVector[][] edgeFeatures; // states x states
-	int numStates, numTargetStates, numNodeFeatures, numEdgeFeatures,
-		numAllFeatures;
+	public final int numStates, numTargetStates, numInstances, numNodeFeatures,
+			numEdgeFeatures, numAllFeatures, S0, SN;
 	
 	public SequentialFeatures(SparseVector[][] nodeFeatures,
 			SparseVector[][] edgeFeatures,
 			int numNodeFeatures, int numEdgeFeatures) {
 		this.nodeFeatures = nodeFeatures;
 		this.edgeFeatures = edgeFeatures;
+		this.numInstances = nodeFeatures.length;
 		this.numStates = edgeFeatures.length;
 		this.numTargetStates = numStates - 2; // excluding dummy states
+		this.S0 = numStates - 2;
+		this.SN = numStates - 1;
 		this.numNodeFeatures = numNodeFeatures;
 		this.numEdgeFeatures = numEdgeFeatures;
 		this.numAllFeatures = numEdgeFeatures + numNodeFeatures *
 				numTargetStates;
 		System.out.println("states:\t" + this.numStates);
 		System.out.println("features:\t" + this.numAllFeatures);
-	}
-	
-
-	public int getNumInstances() {
-		return nodeFeatures.length;
-	}
-	
-	public int getNumFeatures() {
-		return numAllFeatures;
-	}
-	
-	public int getNumStates() {
-		return numStates;
 	}
 	
 	public int getInstanceLength(int instanceID) {
