@@ -54,7 +54,7 @@ public class SequentialFeatures {
 	
 	public double computeNodeScore(int instanceID, int position, int stateID,
 			double[] weights) {
-		// bias + edge features + node features * (previous states)
+		// edge features + node features * (previous states)
 		// not defined for dummy states
 		int offset = numEdgeFeatures + stateID * numNodeFeatures;
 		return nodeFeatures[instanceID][position].dotProduct(weights, offset);
@@ -76,5 +76,45 @@ public class SequentialFeatures {
 			nodeFeatures[instanceID][position].addTo(counts, weight, offset);
 		}
 		edgeFeatures[stateID][prevStateID].addTo(counts, weight);
+	}
+	
+	private void countEdgeFeature(int stateID, int prevStateID, int scale,
+			int[] counts) {
+		SparseVector fvec = edgeFeatures[stateID][prevStateID];
+		if (fvec != null) {
+			for (int i : fvec.indices) {
+				counts[i] += scale;
+			}
+		}
+	}
+	
+	private void countNodeFeature(int instanceID, int position, int stateID,
+			int scale, int[] counts) {
+		int offset = numEdgeFeatures + stateID * numNodeFeatures;
+		SparseVector fvec = nodeFeatures[instanceID][position];
+		for (int i : fvec.indices) {
+			counts[i + offset] += scale;
+		}
+	}
+	
+	// count feature frequency:
+	public void countFeatures(int[] instList, int[] counts) {
+		int totalLength = 0;
+		for (int instanceID : instList) {
+			int length = getInstanceLength(instanceID);
+			totalLength += length;
+			for (int i = 0; i < length; i++) {
+				for (int j = 0; j < numTargetStates; j++) {
+					countNodeFeature(instanceID, i, j, 1, counts);
+				}
+			}
+		}
+		for (int i = 0; i < numTargetStates; i++) {
+			countEdgeFeature(i, S0, instList.length, counts);
+			countEdgeFeature(SN, i, instList.length, counts);
+			for (int j = 0; j < numTargetStates; j++) {
+				countEdgeFeature(i, j, totalLength, counts);
+			}
+		}
 	}
 }

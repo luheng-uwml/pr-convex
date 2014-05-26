@@ -1,5 +1,6 @@
 package optimization;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import inference.SequentialInference;
@@ -11,14 +12,15 @@ public class SemiSupervisedExponentiatedGradientDescent {
 	SequentialInference model;
 	Evaluator eval;
 	int[][] labels;
-	int[] trainList, devList;
-	double[] parameters, empiricalCounts, expectedCounts, runningAccuracy;
+	int[] trainList, devList, workList;
+	double[] parameters, empiricalCounts, expectedCounts, runningAccuracy,
+			logNorm, entropy, trainRatio;
 	double[][][] edgeScores, edgeGradient; // pre-tag x current-tag
 	double[][][] nodeScores, nodeGradient; // sentence-id x sentence-length x current-tag
 	double[][][] marginalsOld;
-	double[] logNorm, entropy;
 	double lambda, objective, initialStepSize;
-	int numInstances, numFeatures, maxNumIterations, numStates, numTargetStates;
+	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
+		numTargetStates;
 	Random randomGen;
 	
 	public SemiSupervisedExponentiatedGradientDescent(SequentialFeatures features,
@@ -29,12 +31,34 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		this.labels = labels;
 		this.trainList = trainList;
 		this.devList = devList;
+		this.workList = new int[trainList.length + devList.length];
+		this.numTrains = trainList.length;
+		for (int i = 0; i < trainList.length; i++) {
+			workList[i] = trainList[i];
+		}
+		for (int i = 0; i < devList.length; i++) {
+			workList[i + numTrains] = devList[i];
+		}
 		this.eval = eval;
 		this.lambda = 1.0 / lambda;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
 		initialize();
+	}
+	
+	private void initializeTrainRatio() {
+		trainRatio = new double[numFeatures];
+		int[] trainFeatureCounts = new int[numFeatures];
+		int[] devFeatureCounts = new int[numFeatures];
+		Arrays.fill(trainFeatureCounts, 0);
+		Arrays.fill(devFeatureCounts, 0);
+		features.countFeatures(trainList, trainFeatureCounts);
+		features.countFeatures(devList, devFeatureCounts);
+		for (int i = 0; i < numFeatures; i++) {
+			trainRatio[i] = 1.0 * trainFeatureCounts[i] / (trainFeatureCounts[i] + devFeatureCounts[i]);
+		}
+		//System.out.println("averaged train ratio:\t" + ArrayHelper.l1Norm(trainRatio))
 	}
 	
 	private void initialize() {
@@ -52,7 +76,7 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		nodeGradient = new double[numInstances][][];
 		logNorm = new double[numInstances];
 		entropy = new double[numInstances];
-		for (int i : trainList) {
+		for (int i : workList) {
 			int length = features.getInstanceLength(i);
 			nodeScores[i] = new double[length][numTargetStates];
 			nodeGradient[i] = new double[length][numTargetStates];
@@ -68,14 +92,17 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		ArrayHelper.deepFill(logNorm, 0.0);
 		objective = 0;
 		runningAccuracy = new double[3]; // Precision, Recall, F1
+		
+		initializeTrainRatio();
+		
 		// initialize objective
 		marginalsOld = null;
-		for (int i : trainList) {
-			OptimizationHelper.computeHardCounts(features, labels, i,
+		for (int instanceID : trainList) {
+			OptimizationHelper.computeHardCounts(features, labels, instanceID,
 					empiricalCounts);
 		}
 		ArrayHelper.deepCopy(empiricalCounts, parameters);
-		for (int instanceID : trainList) {
+		for (int instanceID : workList) {
 			int length = features.getInstanceLength(instanceID);
 			double[][][] edgeMarginals =
 					new double[length + 1][numStates][numStates];
@@ -84,7 +111,7 @@ public class SemiSupervisedExponentiatedGradientDescent {
 			entropy[instanceID] = model.computeEntropy(nodeScores[instanceID],
 					edgeScores[instanceID], edgeMarginals, logNorm[instanceID]);
 			OptimizationHelper.computeSoftCounts(features, instanceID,
-						edgeMarginals, parameters, -1.0);
+						edgeMarginals, parameters, -1, trainRatio);
 			objective -= entropy[instanceID];
 		}
 		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
@@ -104,8 +131,8 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		double stepSize = initialStepSize;
 		double prevObjective = Double.POSITIVE_INFINITY;
 		for (int iteration = 0; iteration < maxNumIterations; iteration ++) {
-			for (int k = 0; k < trainList.length; k++) {
-				int instanceID = trainList[randomGen.nextInt(trainList.length)];
+			for (int k = 0; k < workList.length; k++) {
+				int instanceID = workList[randomGen.nextInt(workList.length)];
 				computeGradient(instanceID);
 				update(instanceID, stepSize);
 				
@@ -116,12 +143,17 @@ public class SemiSupervisedExponentiatedGradientDescent {
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
 			if (iteration % 10 == 9) {
-				validate();
+				validate(trainList);
+				validate(devList);
 				computeAccuracy(devList);
 				computePrimalObjective();
 			}
 			if (objective < prevObjective) {
-				stepSize *= 1.05;
+				if (iteration < 100) {
+					stepSize *= 1.05;
+				} else {
+					stepSize *= 1.0 * iteration / (iteration + 1);
+				}
 			} else {
 				stepSize *= 0.5;
 			}
@@ -144,7 +176,7 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		objective += entropy[instanceID];
 		objective -= 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
 		OptimizationHelper.computeSoftCounts(features, instanceID, tMarginals,
-				parameters);
+				parameters, 1, trainRatio);
 		// perform a gradient update
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
@@ -163,7 +195,7 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		entropy[instanceID] = model.computeEntropy(nodeScores[instanceID],
 				edgeScores[instanceID], tMarginals, logNorm[instanceID]);
 		OptimizationHelper.computeSoftCounts(features, instanceID, tMarginals,
-				parameters, -1.0);
+				parameters, -1, trainRatio);
 		objective -= entropy[instanceID];
 		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
 			/*
@@ -202,25 +234,26 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
 				edgeGradient[instanceID][i][j] = edgeScores[instanceID][i][j] -
-						lambda * features.computeEdgeScore(i, j, parameters);
+						lambda * trainRatio *
+						features.computeEdgeScore(i, j, parameters);
 			}
 		}
 		int length = features.getInstanceLength(instanceID);
 		for (int i = 0; i < length; i++) {
 			for (int j = 0; j < numTargetStates; j++) {
 				nodeGradient[instanceID][i][j] =
-					nodeScores[instanceID][i][j] - lambda *
+					nodeScores[instanceID][i][j] - lambda * trainRatio *
 					features.computeNodeScore(instanceID, i, j, parameters);
 			}
 		}
 	}
 	
-	private void validate() {
+	private void validate(int[] instList) {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
 		int numStates = features.numStates;
-		for (int i : trainList) {
+		for (int i : instList) {
 			int length = features.getInstanceLength(i);
 			double[][] nodeMarginals = new double[length][numStates];
 			double[][][] edgeMarginals =
