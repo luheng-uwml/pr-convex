@@ -78,8 +78,10 @@ public class SequentialInference {
 			}
 		}
 		for (int s = 0; s < numTargetStates; s++) {
-			edgeMarginals[0][s][S0] = Math.exp(alpha[0][s] + beta[0][s] -
-					logNorm);
+			edgeMarginals[0][s][S0] = Math.exp(alpha[0][s] + beta[0][s]
+					- logNorm);
+			edgeMarginals[length][SN][s] = Math.exp(alpha[length-1][s] +
+					beta[length-1][s] - logNorm);
 			for (int i = 1; i < length; i++) {
 				for (int sp = 0; sp < numTargetStates; sp++) {
 					edgeMarginals[i][s][sp] = Math.exp(
@@ -89,6 +91,12 @@ public class SequentialInference {
 			}
 		}
 		return logNorm;
+	}
+	
+	// TODO: implement sanity check:
+	// edge marginals of a position should sum up to one
+	public void sanityCheck(double[][][] edgeMarginals) {
+		
 	}
 	
 	public void posteriorDecoding(double[][] nodeMarginals, int[] prediction) {
@@ -103,18 +111,18 @@ public class SequentialInference {
 	}
 	
 	public double computeEntropy(double[][] nodeScores, double[][] edgeScores,
-			double[][][] edgeMarginal, double logNorm) {
+			double[][][] edgeMarginals, double logNorm) {
 		double entropy = logNorm;
 		int length = nodeScores.length;
 		for (int s = 0; s < numTargetStates; s++) {
-			entropy -= edgeMarginal[0][s][S0] *
+			entropy -= edgeMarginals[0][s][S0] *
 					(nodeScores[0][s] + edgeScores[s][S0]);
-			entropy -= edgeMarginal[length][SN][s] * edgeScores[SN][s];
+			entropy -= edgeMarginals[length][SN][s] * edgeScores[SN][s];
 		}
 		for (int i = 1; i < length; i++) {
 			for (int s = 0; s < numTargetStates; s++) {
 				for (int sp = 0; sp < numTargetStates; sp++) {
-					entropy -= edgeMarginal[i][s][sp] *
+					entropy -= edgeMarginals[i][s][sp] *
 							(nodeScores[i][s] + edgeScores[s][sp]);
 				}
 			}

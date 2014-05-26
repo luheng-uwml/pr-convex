@@ -21,8 +21,8 @@ public class OnlineExponentiatedGradientDescent {
 	int numInstances, numFeatures, maxNumIterations, numStates, numTargetStates;
 	Random randomGen;
 	// line search conditions
-	private static final int maxLineSearchIterations = 10;
-	private static final double lsAlpha = 0.5, lsBeta = 0.75;
+	private static final int maxLineSearchIterations = 1;
+	private static final double lsAlpha = 0.5, lsBeta = 0.5;
 	
 	public OnlineExponentiatedGradientDescent(SequentialFeatures features,
 			int[][] labels, int[] trainList, int[] devList,
@@ -96,9 +96,14 @@ public class OnlineExponentiatedGradientDescent {
 		System.out.println("initial objective::\t" + objective);
 	}
 	
+	// FIXME: 1 / C or C ?
 	public void computeAccuracy(int[] instList) {
+		double[] theta = new double[numFeatures];
+		for (int i = 0; i < numFeatures; i++) {
+			theta[i] = parameters[i] * lambda;
+		}
 		OptimizationHelper.testModel(features, eval, labels, instList,
-				parameters);
+				theta);
 	}
 	
 	public void optimize() {
@@ -109,23 +114,28 @@ public class OnlineExponentiatedGradientDescent {
 				int instanceID = trainList[randomGen.nextInt(trainList.length)];
 				/*
 				backupMarginals(instanceID);
-				updateGradient(instanceID);
+				computeGradient(instanceID);
 				updateDualParameters(instanceID, stepSize);
 				updateObjective(instanceID);
 				*/
 				computeGradient(instanceID);
 				double foundStep = armijoLineSearch(instanceID);
-				learningRate[instanceID] = Math.min(initialStepSize,
-						foundStep * 1.5);	
+				learningRate[instanceID] = stepSize;
+				//learningRate[instanceID] = Math.min(initialStepSize, foundStep * 1.5);
 			}
-			System.out.println("ITER::\t" + iteration + "\tSTEP:\t" + stepSize +
-					"\tOBJ::\t" + objective + "\tPREV::\t" + prevObjective +
+			System.out.println("ITER::\t" + iteration +
+					"\tSTEP:\t" + stepSize +
+					"\tOBJ::\t" + objective +
+					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
-			validate();
-			computeAccuracy(devList);
+			if (iteration % 10 == 9) {
+				validate();
+				computeAccuracy(devList);
+				computePrimalObjective();
+			}
 			prevObjective = objective;
-			if (iteration > 100) {
-				stepSize = Math.max(initialStepSize / Math.sqrt(iteration),
+			if (iteration > 50) {
+				stepSize = Math.max(initialStepSize / Math.sqrt(iteration + 1),
 						1e-5);
 			}
 			// TODO: stopping criterion
@@ -140,17 +150,23 @@ public class OnlineExponentiatedGradientDescent {
 				marginalsOld = new double[length + 1][numStates][numStates],
 				marginalsNew = new double[length + 1][numStates][numStates];
 		double logNormNew = logNorm[instanceID],
-				entropyNew = entropy[instanceID], objectiveNew = objective;
+				entropyNew = entropy[instanceID],
+				objectiveNew = objective,
+				paraNormOld, paraNormNew, objectiveBackup;
 		// backup marginals and objective
+		
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
 				null, marginalsOld);
-		double objectiveOld = objective + entropy[instanceID] -
-				0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
+		paraNormOld = ArrayHelper.l2NormSquared(parameters);
+		objectiveBackup = objective + entropy[instanceID] -
+				0.5 * lambda * paraNormOld;
+		OptimizationHelper.computeSoftCounts(features, instanceID, marginalsOld,
+				parameters);
+		/*
 		double logGradNorm = Math.log(
 				ArrayHelper.l2NormSquared(edgeGradient[instanceID]) +
 				ArrayHelper.l2NormSquared(nodeGradient[instanceID]));
-		OptimizationHelper.computeSoftCounts(features, instanceID, marginalsOld,
-				parameters);
+		*/
 		// do backtracking line search
 		for (int t = 0; t < maxLineSearchIterations; t++) {
 			// perform a gradient update
@@ -172,17 +188,22 @@ public class OnlineExponentiatedGradientDescent {
 					edgeScores[instanceID], marginalsNew, logNormNew);
 			OptimizationHelper.computeSoftCounts(features, instanceID,
 					marginalsNew, parameters, -1.0);
-			objectiveNew = objectiveOld - entropyNew +
-					0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
+			paraNormNew = ArrayHelper.l2NormSquared(parameters);
+			objectiveNew = objectiveBackup - entropyNew + 0.5 * lambda *
+					paraNormNew;
 			/*
-			System.out.println("STEP::\t" + currStep + "\tGRAD_NORM::\t" +
-					logGradNorm + "\tNEW_OBJ::\t" + objectiveNew +
-					"\tOLD_OBJ::\t" + objective);
+			System.out.println("ID::\t" + instanceID +
+					"\tOBJ::\t" + objective + "->" + objectiveNew +
+					"\tENT::\t" + entropy[instanceID] + "->" + entropyNew +
+					"\tLOGNORM::\t" + logNorm[instanceID] + "->" + logNormNew +
+					"\tPNORM::\t" + paraNormOld + "->" + paraNormNew);
 			*/
-			if (objectiveNew < objective - lsAlpha * currStep * logGradNorm) {
+			//if (objectiveNew < objective - lsAlpha * currStep * logGradNorm) {
+			if (objectiveNew < objective - currStep) {
+			//if (paraNormNew < paraNormOld) {
 				succeed = true;
 			}
-			if (succeed || t + 1 >= maxLineSearchIterations) {
+			if (objective < 0 || succeed || t + 1 >= maxLineSearchIterations) {
 				break;
 			}
 			// backtrack
@@ -199,6 +220,28 @@ public class OnlineExponentiatedGradientDescent {
 		logNorm[instanceID] = logNormNew;
 		entropy[instanceID] = entropyNew;
 		return currStep;
+	}
+	
+	private void computePrimalObjective() {
+		double[] theta = new double[numFeatures];
+		for (int i = 0; i < numFeatures; i++) {
+			theta[i] = parameters[i] * lambda;
+		}
+		double primalObjective = 0.5 / lambda * ArrayHelper.l2NormSquared(theta);
+		double[][] tEdgeScores = new double[numStates][numStates];
+		features.computeEdgeScores(tEdgeScores, theta);
+		for (int i : trainList) {
+			int length = features.getInstanceLength(i);
+			double[][] tNodeScores = new double[length][numTargetStates];
+			double[][][] tMarginals =
+					new double[length + 1][numStates][numStates];
+			features.computeNodeScores(i, tNodeScores, theta);
+			double tLogNorm = model.computeMarginals(tNodeScores, tEdgeScores,
+					null, tMarginals);
+			primalObjective -= model.computeLabelLikelihood(tNodeScores,
+					tEdgeScores, tLogNorm, labels[i]);
+		}
+		System.out.println("primal objective::\t" + primalObjective);
 	}
 	
 	private void computeGradient(int instanceID) {
@@ -245,7 +288,6 @@ public class OnlineExponentiatedGradientDescent {
 				"\tF1::\t" + f1);
 	}
 	
-	/*
 	private void updateObjective(int instanceID) {
 		int length = features.getInstanceLength(instanceID);
 		double[][][] edgeMarginals =
@@ -264,9 +306,7 @@ public class OnlineExponentiatedGradientDescent {
 					edgeMarginals, parameters, -1.0);
 		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
 	}
-	*/
 	
-	/*
 	private void backupMarginals(int instanceID) {
 		int length = features.getInstanceLength(instanceID);
 		marginalsOld = new double[length + 1][numStates][numStates];
@@ -289,6 +329,6 @@ public class OnlineExponentiatedGradientDescent {
 			}
 		}
 	}
-	*/
+	
 	
 }

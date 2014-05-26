@@ -76,6 +76,14 @@ public class ArrayHelper {
 		}
 	}
 	
+	public static double l1Norm(double[] arr) {
+		double norm = 0;
+		for (int i = 0; i < arr.length; i++) {
+			norm += arr[i];
+		}
+		return norm;
+	}
+	
 	public static double l2NormSquared(double[] arr) {
 		double norm = 0;
 		for (int i = 0; i < arr.length; i++) {
@@ -163,4 +171,5 @@ public class ArrayHelper {
 		}
 		return minVal;
 	}
+	
 }

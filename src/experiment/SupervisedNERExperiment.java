@@ -67,10 +67,11 @@ public class SupervisedNERExperiment {
 						0.1, 1000);
 		
 		*/
+		// here lambda = 1 / C
 		OnlineExponentiatedGradientDescent optimizer =
 				new OnlineExponentiatedGradientDescent(features, labels,
 						trainList.toArray(), devList.toArray(),  eval, 0.1,
-						0.5, 1000, 12345);
+						0.1, 1000, 12345);
 		
 		optimizer.optimize();
 		//optimizer.testModel();

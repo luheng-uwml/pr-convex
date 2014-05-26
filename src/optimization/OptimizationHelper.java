@@ -8,8 +8,8 @@ public class OptimizationHelper {
 	public static void computeHardCounts(SequentialFeatures features,
 			int[][] labels, int instanceID, double[] counts) {
 		int length = features.getInstanceLength(instanceID);
-		for (int i = 0; i < length; i++) {
-			int s = labels[instanceID][i];
+		for (int i = 0; i <= length; i++) {
+			int s = (i == length) ? features.SN : labels[instanceID][i];
 			int sp = (i == 0) ? features.S0 : labels[instanceID][i - 1];
 			features.addToCounts(instanceID, i, s, sp, counts, 1.0);
 		}
