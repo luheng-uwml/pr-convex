@@ -139,7 +139,6 @@ public class SemiSupervisedExponentiatedGradientDescent {
 	private void update(int instanceID, double stepSize) {
 		int length = features.getInstanceLength(instanceID);
 		double[][][] tMarginals = new double[length + 1][numStates][numStates];
-		
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
 				null, tMarginals);
 		objective += entropy[instanceID];
@@ -166,7 +165,7 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		OptimizationHelper.computeSoftCounts(features, instanceID, tMarginals,
 				parameters, -1.0);
 		objective -= entropy[instanceID];
-		objective += ArrayHelper.l2NormSquared(parameters);
+		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
 			/*
 			System.out.println("ID::\t" + instanceID +
 					"\tSTEP::\t" + currStep +
