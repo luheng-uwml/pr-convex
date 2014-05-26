@@ -42,8 +42,8 @@ public class SupervisedNERExperiment {
 		for (int i = 0; i < allInstances.size(); i++) {
 			labels[i] = i < numTrains ? corpusTrain.instances.get(i).getLabels() :
 				corpusDev.instances.get(i-numTrains).getLabels();
-			if (i < numTrains) {
-			//if (i < 1000) {
+			//if (i < numTrains) {
+			if (i < 1000) {
 				trainList.add(i);
 			} else if (i >= numTrains) {
 				devList.add(i);
@@ -69,8 +69,8 @@ public class SupervisedNERExperiment {
 		*/
 		OnlineExponentiatedGradientDescent optimizer =
 				new OnlineExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 1,
-						0.1, 1000, 12345);
+						trainList.toArray(), devList.toArray(),  eval, 0.1,
+						0.5, 1000, 12345);
 		
 		optimizer.optimize();
 		//optimizer.testModel();
