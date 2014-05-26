@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import optimization.BatchGradientDescent;
 import optimization.ExponentiatedGradientDescent;
 import optimization.OnlineExponentiatedGradientDescent;
+import optimization.SemiSupervisedExponentiatedGradientDescent;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
@@ -68,10 +69,10 @@ public class SupervisedNERExperiment {
 		
 		*/
 		// here lambda = 1 / C
-		OnlineExponentiatedGradientDescent optimizer =
-				new OnlineExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 0.1,
-						0.1, 1000, 12345);
+		SemiSupervisedExponentiatedGradientDescent optimizer =
+				new SemiSupervisedExponentiatedGradientDescent(features, labels,
+						trainList.toArray(), devList.toArray(),  eval, 1,
+						0.5, 1000, 12345);
 		
 		optimizer.optimize();
 		//optimizer.testModel();

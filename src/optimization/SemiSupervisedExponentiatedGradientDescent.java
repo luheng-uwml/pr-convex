@@ -6,22 +6,17 @@ import inference.SequentialInference;
 import data.Evaluator;
 import feature.SequentialFeatures;
 
-/**
- * semi-supervised exponentiated gradient descent
- * @author luheng
- *
- */
 public class SemiSupervisedExponentiatedGradientDescent {
 	SequentialFeatures features;
 	SequentialInference model;
 	Evaluator eval;
 	int[][] labels;
-	int[] trainList, devList, workList;
+	int[] trainList, devList;
 	double[] parameters, empiricalCounts, expectedCounts, runningAccuracy;
 	double[][][] edgeScores, edgeGradient; // pre-tag x current-tag
 	double[][][] nodeScores, nodeGradient; // sentence-id x sentence-length x current-tag
 	double[][][] marginalsOld;
-	double[] logNorm, entropy; 
+	double[] logNorm, entropy;
 	double lambda, objective, initialStepSize;
 	int numInstances, numFeatures, maxNumIterations, numStates, numTargetStates;
 	Random randomGen;
@@ -97,8 +92,12 @@ public class SemiSupervisedExponentiatedGradientDescent {
 	}
 	
 	public void computeAccuracy(int[] instList) {
+		double[] theta = new double[numFeatures];
+		for (int i = 0; i < numFeatures; i++) {
+			theta[i] = parameters[i] * lambda;
+		}
 		OptimizationHelper.testModel(features, eval, labels, instList,
-				parameters);
+				theta);
 	}
 	
 	public void optimize() {
@@ -107,39 +106,47 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		for (int iteration = 0; iteration < maxNumIterations; iteration ++) {
 			for (int k = 0; k < trainList.length; k++) {
 				int instanceID = trainList[randomGen.nextInt(trainList.length)];
-				backupMarginals(instanceID);
-				updateGradient(instanceID);
-				updateDualParameters(instanceID, stepSize);
-				updateObjective(instanceID);
+				computeGradient(instanceID);
+				update(instanceID, stepSize);
+				
 			}
-			System.out.println("ITER::\t" + iteration + "\tSTEP:\t" + stepSize +
-					"\tOBJ::\t" + objective + "\tPREV::\t" + prevObjective +
+			System.out.println("ITER::\t" + iteration +
+					"\tSTEP:\t" + stepSize +
+					"\tOBJ::\t" + objective +
+					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
-			validate();
-			computeAccuracy(devList);
-			prevObjective = objective;
-			if (iteration > 100) {
-				stepSize = Math.max(initialStepSize / Math.sqrt(iteration),
-						1e-5);
+			if (iteration % 10 == 9) {
+				validate();
+				computeAccuracy(devList);
+				computePrimalObjective();
 			}
+			if (objective < prevObjective) {
+				stepSize *= 1.05;
+			} else {
+				stepSize *= 0.5;
+			}
+			prevObjective = objective;
+			// TODO: stopping criterion
 			/*
-			if (Math.abs((objective - prevObjective) / prevObjective) < 1e-5) {
-				System.out.println("succeed!");
-				break;
+			if (iteration > 50) {
+				stepSize = Math.max(initialStepSize / (iteration + 1),
+						1e-5);
 			}
 			*/
 		}
 	}
 	
-	private void backupMarginals(int instanceID) {
+	private void update(int instanceID, double stepSize) {
 		int length = features.getInstanceLength(instanceID);
-		marginalsOld = new double[length + 1][numStates][numStates];
+		double[][][] tMarginals = new double[length + 1][numStates][numStates];
+		
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
-				null, marginalsOld);
-	}
-	
-	private void updateDualParameters(int instanceID, double stepSize) {
-		int length = features.getInstanceLength(instanceID);
+				null, tMarginals);
+		objective += entropy[instanceID];
+		objective -= 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
+		OptimizationHelper.computeSoftCounts(features, instanceID, tMarginals,
+				parameters);
+		// perform a gradient update
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
 				edgeScores[instanceID][i][j] -= stepSize *
@@ -152,28 +159,47 @@ public class SemiSupervisedExponentiatedGradientDescent {
 						nodeGradient[instanceID][i][j];
 			}
 		}
-	}
-	
-	private void updateObjective(int instanceID) {
-		int length = features.getInstanceLength(instanceID);
-		double[][][] edgeMarginals =
-				new double[length + 1][numStates][numStates];
-		double entropyOld = entropy[instanceID]; 
 		logNorm[instanceID] = model.computeMarginals(nodeScores[instanceID],
-				edgeScores[instanceID], null, edgeMarginals);
+				edgeScores[instanceID], null, tMarginals);
 		entropy[instanceID] = model.computeEntropy(nodeScores[instanceID],
-				edgeScores[instanceID], edgeMarginals, logNorm[instanceID]);
-		// update objective
-		objective += entropyOld  - entropy[instanceID];
-		objective -= 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
-		OptimizationHelper.computeSoftCounts(features, instanceID,
-					marginalsOld, parameters);
-		OptimizationHelper.computeSoftCounts(features, instanceID,
-					edgeMarginals, parameters, -1.0);
-		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
+				edgeScores[instanceID], tMarginals, logNorm[instanceID]);
+		OptimizationHelper.computeSoftCounts(features, instanceID, tMarginals,
+				parameters, -1.0);
+		objective -= entropy[instanceID];
+		objective += ArrayHelper.l2NormSquared(parameters);
+			/*
+			System.out.println("ID::\t" + instanceID +
+					"\tSTEP::\t" + currStep +
+					"\tOBJ::\t" + objective + "->" + objectiveNew +
+					"\tENT::\t" + entropy[instanceID] + "->" + entropyNew +
+					"\tLOGNORM::\t" + logNorm[instanceID] + "->" + logNormNew +
+					"\tPNORM::\t" + paraNormOld + "->" + paraNormNew);
+			*/
 	}
 	
-	private void updateGradient(int instanceID) {
+	private void computePrimalObjective() {
+		double[] theta = new double[numFeatures];
+		for (int i = 0; i < numFeatures; i++) {
+			theta[i] = parameters[i] * lambda;
+		}
+		double primalObjective = 0.5 / lambda * ArrayHelper.l2NormSquared(theta);
+		double[][] tEdgeScores = new double[numStates][numStates];
+		features.computeEdgeScores(tEdgeScores, theta);
+		for (int i : trainList) {
+			int length = features.getInstanceLength(i);
+			double[][] tNodeScores = new double[length][numTargetStates];
+			double[][][] tMarginals =
+					new double[length + 1][numStates][numStates];
+			features.computeNodeScores(i, tNodeScores, theta);
+			double tLogNorm = model.computeMarginals(tNodeScores, tEdgeScores,
+					null, tMarginals);
+			primalObjective -= model.computeLabelLikelihood(tNodeScores,
+					tEdgeScores, tLogNorm, labels[i]);
+		}
+		System.out.println("primal objective::\t" + primalObjective);
+	}
+	
+	private void computeGradient(int instanceID) {
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
 				edgeGradient[instanceID][i][j] = edgeScores[instanceID][i][j] -
@@ -217,4 +243,3 @@ public class SemiSupervisedExponentiatedGradientDescent {
 				"\tF1::\t" + f1);
 	}
 }
-

@@ -106,6 +106,14 @@ public class OnlineExponentiatedGradientDescent {
 				theta);
 	}
 	
+	private double computeAvgStepSize() {
+		double result = 0;
+		for (int i : trainList) {
+			result += learningRate[i];
+		}
+		return result / trainList.length;
+	}
+	
 	public void optimize() {
 		double stepSize = initialStepSize;
 		double prevObjective = Double.POSITIVE_INFINITY;
@@ -124,7 +132,7 @@ public class OnlineExponentiatedGradientDescent {
 				//learningRate[instanceID] = Math.min(initialStepSize, foundStep * 1.5);
 			}
 			System.out.println("ITER::\t" + iteration +
-					"\tSTEP:\t" + stepSize +
+					"\tAVG-STEP:\t" + computeAvgStepSize() +
 					"\tOBJ::\t" + objective +
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
@@ -133,11 +141,18 @@ public class OnlineExponentiatedGradientDescent {
 				computeAccuracy(devList);
 				computePrimalObjective();
 			}
+			if (objective < prevObjective) {
+				stepSize *= 1.05;
+			} else {
+				stepSize *= 0.5;
+			}
 			prevObjective = objective;
+			/*
 			if (iteration > 50) {
-				stepSize = Math.max(initialStepSize / Math.sqrt(iteration + 1),
+				stepSize = Math.max(initialStepSize / (iteration + 1),
 						1e-5);
 			}
+			*/
 			// TODO: stopping criterion
 		}
 	}
@@ -162,11 +177,6 @@ public class OnlineExponentiatedGradientDescent {
 				0.5 * lambda * paraNormOld;
 		OptimizationHelper.computeSoftCounts(features, instanceID, marginalsOld,
 				parameters);
-		/*
-		double logGradNorm = Math.log(
-				ArrayHelper.l2NormSquared(edgeGradient[instanceID]) +
-				ArrayHelper.l2NormSquared(nodeGradient[instanceID]));
-		*/
 		// do backtracking line search
 		for (int t = 0; t < maxLineSearchIterations; t++) {
 			// perform a gradient update
@@ -193,17 +203,16 @@ public class OnlineExponentiatedGradientDescent {
 					paraNormNew;
 			/*
 			System.out.println("ID::\t" + instanceID +
+					"\tSTEP::\t" + currStep +
 					"\tOBJ::\t" + objective + "->" + objectiveNew +
 					"\tENT::\t" + entropy[instanceID] + "->" + entropyNew +
 					"\tLOGNORM::\t" + logNorm[instanceID] + "->" + logNormNew +
 					"\tPNORM::\t" + paraNormOld + "->" + paraNormNew);
 			*/
-			//if (objectiveNew < objective - lsAlpha * currStep * logGradNorm) {
 			if (objectiveNew < objective - currStep) {
-			//if (paraNormNew < paraNormOld) {
 				succeed = true;
 			}
-			if (objective < 0 || succeed || t + 1 >= maxLineSearchIterations) {
+			if (succeed || t + 1 >= maxLineSearchIterations) {
 				break;
 			}
 			// backtrack
