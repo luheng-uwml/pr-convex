@@ -1,27 +1,12 @@
 package feature;
 
-public class SequentialFeatures {
-	protected SparseVector[][] nodeFeatures; // instances x  postions  
-	protected SparseVector[][] edgeFeatures; // states x states
-	public final int numStates, numTargetStates, numInstances, numNodeFeatures,
-			numEdgeFeatures, numAllFeatures, S0, SN;
-	
-	public SequentialFeatures(SparseVector[][] nodeFeatures,
+public class WeightedSequentialFeatures extends SequentialFeatures {
+	protected double[] discountRatio; // discount
+	public WeightedSequentialFeatures(SparseVector[][] nodeFeatures,
 			SparseVector[][] edgeFeatures,
 			int numNodeFeatures, int numEdgeFeatures) {
-		this.nodeFeatures = nodeFeatures;
-		this.edgeFeatures = edgeFeatures;
-		this.numInstances = nodeFeatures.length;
-		this.numStates = edgeFeatures.length;
-		this.numTargetStates = numStates - 2; // excluding dummy states
-		this.S0 = numStates - 2;
-		this.SN = numStates - 1;
-		this.numNodeFeatures = numNodeFeatures;
-		this.numEdgeFeatures = numEdgeFeatures;
-		this.numAllFeatures = numEdgeFeatures + numNodeFeatures *
-				numTargetStates;
-		System.out.println("states:\t" + this.numStates);
-		System.out.println("features:\t" + this.numAllFeatures);
+		super(nodeFeatures, edgeFeatures, numNodeFeatures, numEdgeFeatures);
+		discountRatio = new double[numAllFeatures];
 	}
 	
 	public int getInstanceLength(int instanceID) {
@@ -44,6 +29,12 @@ public class SequentialFeatures {
 				edgeScores[i][j] = computeEdgeScore(i, j, weights);
 			}
 		}
+	}
+	
+	public double computeScore(int instanceID, int position, int stateID,
+			int prevStateID, double[] weights) {
+		return computeNodeScore(instanceID, position, stateID, weights) +
+				computeEdgeScore(stateID, prevStateID, weights);
 	}
 	
 	public double computeNodeScore(int instanceID, int position, int stateID,
@@ -96,7 +87,7 @@ public class SequentialFeatures {
 		int totalLength = 0;
 		for (int instanceID : instList) {
 			int length = getInstanceLength(instanceID);
-			totalLength += (length - 1);
+			totalLength += length;
 			for (int i = 0; i < length; i++) {
 				for (int j = 0; j < numTargetStates; j++) {
 					countNodeFeature(instanceID, i, j, 1, counts);

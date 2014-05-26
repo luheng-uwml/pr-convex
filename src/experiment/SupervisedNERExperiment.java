@@ -71,7 +71,7 @@ public class SupervisedNERExperiment {
 		// here lambda = 1 / C
 		SemiSupervisedExponentiatedGradientDescent optimizer =
 				new SemiSupervisedExponentiatedGradientDescent(features, labels,
-						trainList.toArray(), devList.toArray(),  eval, 1,
+						trainList.toArray(), devList.toArray(),  eval, 0.1,
 						0.5, 1000, 12345);
 		
 		optimizer.optimize();
