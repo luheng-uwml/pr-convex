@@ -104,7 +104,7 @@ public class KNNGraphConstructor {
 					long timeElapsedMin = 1 + (System.currentTimeMillis()
 							- startTime) / 60000;
 					long nodesPerMin = offset / timeElapsedMin;
-					print("\nThread" + id + "\t::" + offset
+					print("Thread" + id + "\t::" + offset
 							+ " nodes finished, " + (end -start - offset)
 							+ " nodes to go. " + nodesPerMin
 							+ " nodes per minute\n");

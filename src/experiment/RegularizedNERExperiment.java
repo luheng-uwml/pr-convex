@@ -31,30 +31,22 @@ public class RegularizedNERExperiment {
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
 		int numTrains = 1000;
-		//int numInstances =  numTrains + corpusDev.size();
-		int numInstances = corpusTrain.size();
+		int numInstances = 2000; //corpusTrain.size();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
 		TIntArrayList trainList = new TIntArrayList(),
 					  devList = new TIntArrayList();
 		int[][] labels = new int[numInstances][];
-		for (int i = 0; i < corpusTrain.size(); i++) {
+		for (int i = 0; i < Math.min(numInstances, corpusTrain.size()); i++) {
 			int instanceID = allInstances.size();
 			allInstances.add(corpusTrain.instances.get(i));
 			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
 			if (i < numTrains) {
 				trainList.add(instanceID);
-			} else {
+			} else if (i < numInstances) {
 				devList.add(instanceID);
 			}
 		}
-		/*
-		for (int i = 0; i < corpusDev.size(); i++) {
-			int instanceID = allInstances.size();
-			allInstances.add(corpusDev.instances.get(i));
-			devList.add(instanceID);
-			labels[instanceID] = corpusDev.instances.get(i).getLabels();
-		}
-		*/
+		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				allInstances, 5);
 		extractor.printInfo();
@@ -64,7 +56,7 @@ public class RegularizedNERExperiment {
 		ngramExtractor.printInfo();
 		
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.ngramFeatures, 10, true, 0, 4);
+				ngramExtractor.ngramFeatures, 10, true, 0, 8);
 		graphConstructor.run();
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
