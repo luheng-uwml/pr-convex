@@ -69,8 +69,9 @@ public class OptimizationHelper {
 			int instanceID, double[][][] edgeMarginals, double[][] counts,
 			double scale) {
 		int length = graph.getInstanceLength(instanceID);
+		int numTargetStates = counts.length;
 		for (int i = 0; i < length; i++) {
-			for (int s = 0; s < edgeMarginals[i].length; s++) {
+			for (int s = 0; s < numTargetStates; s++) {
 				for (int sp = 0; sp < edgeMarginals[i][s].length; sp++) {
 					graph.addToCounts(instanceID, i, counts[s],
 							scale * edgeMarginals[i][s][sp]);
