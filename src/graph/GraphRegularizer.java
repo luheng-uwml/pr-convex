@@ -3,7 +3,6 @@ package graph;
 import java.util.Arrays;
 
 import optimization.ArrayHelper;
-import feature.DynamicSparseVector;
 import feature.SparseVector;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -42,7 +41,6 @@ public class GraphRegularizer {
 			}
 		}
 		// prepare node counts (for normalization)
-		/*
 		nodeCounts = new double[numNodes];
 		Arrays.fill(nodeCounts, 0.0);
 		for (int i = 0; i < numInstances; i++) {
@@ -50,11 +48,9 @@ public class GraphRegularizer {
 				nodeCounts[nodes[i][j]] ++;
 			}
 		}
-		*/
 	}
 	
 	public void setNodeCounts(int[] instList) {
-		nodeCounts = new double[numNodes];
 		Arrays.fill(nodeCounts, 0.0);
 		for (int instanceID : instList) {
 			for (int j = 0; j < nodes[instanceID].length; j++) {

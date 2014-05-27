@@ -40,6 +40,7 @@ public class SparseVector {
 		}
 	}
 	
+	// Compute dot product for sparse vectors, I think this might be fast ...
 	public double dotProduct(SparseVector other) {
 		if(length == 0 || other.length == 0 ||
 			indices[0] > other.indices[other.length-1] ||

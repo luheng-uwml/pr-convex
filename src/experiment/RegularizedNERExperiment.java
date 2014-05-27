@@ -1,8 +1,5 @@
 package experiment;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import optimization.*;
@@ -12,7 +9,6 @@ import data.NERSequence;
 import feature.NERFeatureExtractor;
 import feature.NGramFeatureExtractor;
 import feature.SequentialFeatures;
-import feature.SparseVector;
 import gnu.trove.list.array.TIntArrayList;
 import graph.GraphRegularizer;
 import graph.KNNGraphConstructor;
@@ -35,7 +31,8 @@ public class RegularizedNERExperiment {
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
 		int numTrains = 1000;
-		int numInstances =  numTrains + corpusDev.size();
+		//int numInstances =  numTrains + corpusDev.size();
+		int numInstances = corpusTrain.size();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
 		TIntArrayList trainList = new TIntArrayList(),
 					  devList = new TIntArrayList();
@@ -67,7 +64,7 @@ public class RegularizedNERExperiment {
 		ngramExtractor.printInfo();
 		
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.ngramFeatures, 10, true, 1e-2, 4);
+				ngramExtractor.ngramFeatures, 10, true, 0, 4);
 		graphConstructor.run();
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
@@ -75,6 +72,9 @@ public class RegularizedNERExperiment {
 		GraphRegularizer graph =
 				new GraphRegularizer(ngramExtractor.ngramIDs,
 					graphConstructor.getEdgeList(), features.numTargetStates);
+		
+		double goldPenalty = graph.computeTotalPenalty(labels);
+		System.out.println("gold penalty::\t" + goldPenalty);
 		
 		// here lambda = 1 / C
 		RegularizedExponentiatedGradientDescent optimizer =

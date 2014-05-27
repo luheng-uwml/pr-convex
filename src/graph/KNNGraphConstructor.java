@@ -113,7 +113,7 @@ public class KNNGraphConstructor {
 		}
 	}
 	
-	public void symmetrifyGraph() {
+	private void symmetrifyGraph() {
 		for (int i = 0; i < numNodes; i++) {
 			edges[i].freeze();
 		}
@@ -126,17 +126,11 @@ public class KNNGraphConstructor {
 				}
 			}
 		}
-	}
-	
-	public void saveGraph(String graphPath, String ngramPath)
-			throws UnsupportedEncodingException, FileNotFoundException,
-				IOException {
+		// Print Graph info
 		int nrEdges = 0, nrEmptyNodes = 0;
 		double weightNorm = 0;
 		double avgDegree = 0, maxDegree = -1, minDegree = Double.MAX_VALUE;
 		double avgFreqEmpty = 0, avgFreqNonEmpty = 0; 
-		System.out.println("Saving graph to file: " + graphPath);
-		BufferedWriter fout = new BufferedWriter(new FileWriter(graphPath));
 		for (int i = 0; i < numNodes; i++) {
 			int degree = 0;
 			for (Iterator<Edge> itr = edges[i].iterator(); itr.hasNext(); ) {
@@ -144,11 +138,9 @@ public class KNNGraphConstructor {
 				if (!edges[e.neighbor].contains(i) || e.weight <= 0) {
 					continue;
 				}
-				++ degree;
-				++ nrEdges;
+				degree ++;
+				nrEdges ++;
 				weightNorm += e.weight;
-				fout.write(String.format("%d\t%d\t%.12f\n", i + 1,
-						e.neighbor + 1, e.weight));
 			}
 			if (degree == 0) {
 				++ nrEmptyNodes;
@@ -157,16 +149,6 @@ public class KNNGraphConstructor {
 			maxDegree = Math.max(maxDegree, degree);
 			minDegree = Math.min(minDegree, degree);
 		}
-		fout.close();
-		/*
-		System.out.println("Saving ngram index to file: " + ngramPath);
-		fout = new BufferedWriter(new FileWriter(ngramPath));
-		for (int nid= 0; nid < numNodes; nid++ ) {
-			String ngram = ngramCounts.index2str.get(nid);
-			fout.write(String.format("%d\t%s\n", nid + 1, ngram));
-		}
-		fout.close();
-		*/
 		System.out.println("graph weight norm: " + weightNorm +
 				"\t num edges:\t" + nrEdges);
 		System.out.println("Averaged node degree: " + avgDegree / numNodes + 
@@ -180,6 +162,33 @@ public class KNNGraphConstructor {
 				"Averaged non-empty node frequency: %f\n",
 				avgFreqEmpty / nrEmptyNodes, 
 				avgFreqNonEmpty / (numNodes - nrEmptyNodes)));
+	}
+	
+	public void saveGraph(String graphPath, String ngramPath)
+			throws UnsupportedEncodingException, FileNotFoundException,
+				IOException {
+		System.out.println("Saving graph to file: " + graphPath);
+		BufferedWriter fout = new BufferedWriter(new FileWriter(graphPath));
+		for (int i = 0; i < numNodes; i++) {
+			for (Iterator<Edge> itr = edges[i].iterator(); itr.hasNext(); ) {
+				Edge e = itr.next();
+				if (!edges[e.neighbor].contains(i) || e.weight <= 0) {
+					continue;
+				}
+				fout.write(String.format("%d\t%d\t%.12f\n", i + 1,
+						e.neighbor + 1, e.weight));
+			}
+		}
+		fout.close();
+		/*
+		System.out.println("Saving ngram index to file: " + ngramPath);
+		fout = new BufferedWriter(new FileWriter(ngramPath));
+		for (int nid= 0; nid < numNodes; nid++ ) {
+			String ngram = ngramCounts.index2str.get(nid);
+			fout.write(String.format("%d\t%s\n", nid + 1, ngram));
+		}
+		fout.close();
+		*/
 	}
 	
 	// TODO: estimate graph quality using gold labels
