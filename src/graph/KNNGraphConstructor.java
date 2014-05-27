@@ -58,6 +58,11 @@ public class KNNGraphConstructor {
 		symmetrifyAndSaveGraph();
 	}
 
+	// TODO: implement me
+	public SparseVector[] getEdgeList() {
+		
+	}
+	
 	protected synchronized void print(String string) {
 		System.out.print(string);
 	}

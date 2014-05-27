@@ -42,25 +42,21 @@ public class EdgeList {
 		}
 	}
 	
-	public Iterator<Edge> iterator()
-	{
+	public Iterator<Edge> iterator() {
 		return queue.iterator();
 	}
 	
-	public boolean isEmpty()
-	{
+	public boolean isEmpty() {
 		return queue.isEmpty();
 	}
 	
-	public Edge poll()
-	{
+	public Edge poll() {
 		Edge e = queue.poll();
 		set.remove(e);
 		return e;
 	}
 	
-	public Edge peek()
-	{
+	public Edge peek() {
 		return queue.peek();
 	}
 

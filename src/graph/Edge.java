@@ -11,7 +11,9 @@ public class Edge implements Comparable<Object> {
 	
 	public int compareTo(Object arg0) {
 		Edge e2 = (Edge) arg0;
-		if(neighbor == e2.neighbor) return 0;
+		if (neighbor == e2.neighbor) {
+			return 0;
+		}
 		return weight < e2.weight ? -1 : 1;
 	}
 }
