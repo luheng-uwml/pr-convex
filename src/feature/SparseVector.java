@@ -5,7 +5,7 @@ import java.util.Arrays;
 public class SparseVector {
 	public int[] indices;
 	public double[] values;
-	public int length;
+	public final int length;
 	
 	public SparseVector(DynamicSparseVector vec) {
 		length = vec.size();
@@ -17,16 +17,21 @@ public class SparseVector {
 		}
 	}
 	
+	// TODO: sort indices here
+	public SparseVector(int[] indices, double[] values) {
+		this.length = indices.length;
+		this.indices = new int[length];
+		this.values = new double[length];
+		for (int i = 0; i < length; i++) {
+			this.indices[i] = indices[i];
+			this.values[i] = values[i];
+		}
+	}
+	
 	public int size() {
 		return length;
 	}
-	/*
-	public SparseVector(TIntArrayList indices, TDoubleArrayList values) {
-		this.indices = indices.toArray();
-		this.values = values.toArray();
-		this.length = this.indices.length;
-	}
-	*/
+	
 	public void normalize() {
 		double norm = 0;
 		for (int i = 0; i < length; i++) {
