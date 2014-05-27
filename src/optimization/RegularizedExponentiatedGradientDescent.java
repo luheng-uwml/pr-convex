@@ -6,34 +6,39 @@ import java.util.Random;
 import inference.SequentialInference;
 import data.Evaluator;
 import feature.SequentialFeatures;
+import regularization.SimilarityRegularizationFeatures;
 
 public class RegularizedExponentiatedGradientDescent {
 	SequentialFeatures features;
 	SequentialInference model;
+	SimilarityRegularizationFeatures graph;
 	Evaluator eval;
 	int[][] labels;
 	int[] trainList, devList, workList;
 	boolean[] isLabeled;
 	double[] parameters, parametersGrad, empiricalCounts, labeledCounts,
 			unlabeledCounts, logNorm, entropy, trainRatio;
-	double[][][] edgeScores, nodeScores;
-	double lambda, objective, initialStepSize;
+	double[][] nodeCounts; // states x nodes
+	double[][][] edgeScores, nodeScores; // scores for each instance
+	double lambda1, lambda2, objective, initialStepSize;
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
 	static final double stoppingCriterion = 1e-5;
 	
 	public RegularizedExponentiatedGradientDescent(
-			SequentialFeatures features,
-			int[][] labels, int[] trainList, int[] devList,
-			Evaluator eval, double lambda, double initialStepSize,
+			SequentialFeatures features, SimilarityRegularizationFeatures graph,
+			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
+			double lambda1, double lambda2, double initialStepSize,
 			int maxNumIterations, int randomSeed) {
 		this.features = features;
+		this.graph = graph;
 		this.labels = labels;
 		this.trainList = trainList;
 		this.devList = devList;
 		this.eval = eval;
-		this.lambda = 1.0 / lambda;
+		this.lambda1 = 1.0 / lambda1;
+		this.lambda2 = lambda2;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
@@ -51,6 +56,7 @@ public class RegularizedExponentiatedGradientDescent {
 		empiricalCounts = new double[numFeatures];
 		labeledCounts = new double[numFeatures];
 		unlabeledCounts = new double[numFeatures];
+		nodeCounts = new double[numTargetStates][graph.numNodes];
 		edgeScores = new double[numInstances][numStates][numStates];
 		nodeScores = new double[numInstances][][];
 		logNorm = new double[numInstances];
@@ -76,10 +82,10 @@ public class RegularizedExponentiatedGradientDescent {
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
 		ArrayHelper.deepFill(labeledCounts, 0.0);
 		ArrayHelper.deepFill(unlabeledCounts, 0.0);
+		ArrayHelper.deepFill(nodeCounts, 0.0);
 		ArrayHelper.deepFill(edgeScores, 0.0);
 		ArrayHelper.deepFill(entropy, 0.0);
 		ArrayHelper.deepFill(logNorm, 0.0);
-		objective = 0;
 		initializeTrainRatio();
 		initializeObjective();
 	}
@@ -114,20 +120,29 @@ public class RegularizedExponentiatedGradientDescent {
 	}
 	
 	private void initializeObjective() {
+		objective = 0;
+		graph.setNodeCounts(workList);
 		for (int instanceID : trainList) {
-			OptimizationHelper.computeHardCounts(features, labels, instanceID,
+			OptimizationHelper.computeHardCounts(features, instanceID, labels,
 					empiricalCounts);
+			OptimizationHelper.computeHardCounts(graph, instanceID, labels,
+					nodeCounts, 1.0);
 		}
 		for (int instanceID : workList) {
 			int length = features.getInstanceLength(instanceID);
 			double[][][] edgeMarginals =
 					new double[length + 1][numStates][numStates];
 			updateEntropy(instanceID, edgeMarginals);
-			addToSoftCounts(instanceID, edgeMarginals);
+			updateSoftCounts(instanceID, edgeMarginals);
+			if (!isLabeled[instanceID]) {
+				OptimizationHelper.computeSoftCounts(graph, instanceID,
+						edgeMarginals, nodeCounts, 1.0);
+			}
 			objective -= entropy[instanceID];
 		}
 		updatePrimalParameters();
-		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
+		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
+		objective += 0.25 * lambda2 * graph.computeTotalPenalty(nodeCounts);
 		System.out.println("initial objective::\t" + objective);
 	}
 	
@@ -151,12 +166,7 @@ public class RegularizedExponentiatedGradientDescent {
 				computePrimalObjective();
 			}
 			if (objective < prevObjective) {
-				//if (iteration < 100) {
 				stepSize *= 1.02;
-				//}
-				/*else {
-					stepSize *= 1.0 * iteration / (iteration + 1);
-				}*/
 			} else {
 				stepSize *= 0.5;
 			}
@@ -190,15 +200,18 @@ public class RegularizedExponentiatedGradientDescent {
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
 				null, tMarginals);
 		objective += entropy[instanceID];
-		objective -= 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
-		
+		objective -= 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
+		objective -= 0.25 * lambda2 * graph.computeTotalPenalty(instanceID,
+				nodeCounts);
 		subtractFromSoftCounts(instanceID, tMarginals);
 		updateParameters(instanceID, tNodeGradient, tEdgeGradient, stepSize);
 		updateEntropy(instanceID, tMarginals);
-		addToSoftCounts(instanceID, tMarginals);
+		updateSoftCounts(instanceID, tMarginals);
 		updatePrimalParameters();
 		objective -= entropy[instanceID];
-		objective += 0.5 * lambda * ArrayHelper.l2NormSquared(parameters);
+		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
+		objective += 0.25 * lambda2 * graph.computeTotalPenalty(instanceID,
+				nodeCounts);
 	}
 	
 	private void updateEntropy(int instanceID, double[][][] edgeMarginals) {
@@ -208,13 +221,15 @@ public class RegularizedExponentiatedGradientDescent {
 				edgeScores[instanceID], edgeMarginals, logNorm[instanceID]);
 	}
 	
-	private void addToSoftCounts(int instanceID, double[][][] edgeMarginals) {
+	private void updateSoftCounts(int instanceID, double[][][] edgeMarginals) {
 		if (isLabeled[instanceID]) {
 			OptimizationHelper.computeSoftCounts(features, instanceID,
 						edgeMarginals, labeledCounts);
 		} else {
 			OptimizationHelper.computeSoftCounts(features, instanceID,
 					edgeMarginals, unlabeledCounts);
+			OptimizationHelper.computeSoftCounts(graph, instanceID,
+					edgeMarginals, nodeCounts, 1.0);
 		}
 	}
 	
@@ -226,15 +241,18 @@ public class RegularizedExponentiatedGradientDescent {
 		} else {
 			OptimizationHelper.computeSoftCounts(features, instanceID,
 					edgeMarginals, unlabeledCounts, -1.0);
+			OptimizationHelper.computeSoftCounts(graph, instanceID,
+					edgeMarginals, nodeCounts, -1.0);
 		}
 	}
 	
 	private void computePrimalObjective() {
 		double[] theta = new double[numFeatures];
 		for (int i = 0; i < numFeatures; i++) {
-			theta[i] = parameters[i] * lambda;
+			theta[i] = parameters[i] * lambda1;
 		}
-		double primalObjective = 0.5 / lambda * ArrayHelper.l2NormSquared(theta);
+		double primalObjective = 0.5 / lambda1 *
+				ArrayHelper.l2NormSquared(theta);
 		double[][] tEdgeScores = new double[numStates][numStates];
 		features.computeEdgeScores(tEdgeScores, theta);
 		for (int i : trainList) {
@@ -256,15 +274,23 @@ public class RegularizedExponentiatedGradientDescent {
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
 				edgeGradient[i][j] = edgeScores[instanceID][i][j] -
-					lambda * features.computeEdgeScore(i, j, parametersGrad);
+					lambda1 * features.computeEdgeScore(i, j, parametersGrad);
 			}
 		}
 		int length = features.getInstanceLength(instanceID);
 		for (int i = 0; i < length; i++) {
 			for (int j = 0; j < numTargetStates; j++) {
 				nodeGradient[i][j] =
-					nodeScores[instanceID][i][j] - lambda *
+					nodeScores[instanceID][i][j] - lambda1 *
 					features.computeNodeScore(instanceID, i, j, parametersGrad);
+			}
+		}
+		if (!isLabeled[instanceID]) {
+			for (int i = 0; i < length; i++) {
+				for (int j = 0; j < numTargetStates; j++) {
+					nodeGradient[i][j] -= lambda2 *
+						graph.computePenalty(instanceID, i, nodeCounts[j]);
+				}
 			}
 		}
 	}
@@ -315,9 +341,8 @@ public class RegularizedExponentiatedGradientDescent {
 	public void computeAccuracy(int[] instList) {
 		double[] theta = new double[numFeatures];
 		for (int i = 0; i < numFeatures; i++) {
-			theta[i] = parameters[i] * lambda;
+			theta[i] = parameters[i] * lambda1;
 		}
-		OptimizationHelper.testModel(features, eval, labels, instList,
-				theta);
+		OptimizationHelper.testModel(features, eval, labels, instList, theta);
 	}
 }

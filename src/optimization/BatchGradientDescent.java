@@ -42,7 +42,7 @@ public class BatchGradientDescent {
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
 		// compute empirical counts from labels
 		for (int i : trainList) {
-			OptimizationHelper.computeHardCounts(features, labels, i,
+			OptimizationHelper.computeHardCounts(features, i, labels,
 					empiricalCounts);
 		}
 		runningAccuracy = new double[3]; // Precision, Recall, F1

@@ -76,7 +76,7 @@ public class OnlineExponentiatedGradientDescent {
 		// initialize objective
 		marginalsOld = null;
 		for (int i : trainList) {
-			OptimizationHelper.computeHardCounts(features, labels, i,
+			OptimizationHelper.computeHardCounts(features, i, labels,
 					empiricalCounts);
 		}
 		ArrayHelper.deepCopy(empiricalCounts, parameters);

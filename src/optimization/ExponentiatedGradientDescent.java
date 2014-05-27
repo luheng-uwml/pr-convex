@@ -58,7 +58,7 @@ public class ExponentiatedGradientDescent {
 		ArrayHelper.deepFill(edgeScores, 0.0);
 		ArrayHelper.deepFill(edgeGradient, 0.0);
 		for (int i : trainList) {
-			OptimizationHelper.computeHardCounts(features, labels, i,
+			OptimizationHelper.computeHardCounts(features, i, labels,
 					empiricalCounts);
 		}
 		runningAccuracy = new double[3]; // Precision, Recall, F1

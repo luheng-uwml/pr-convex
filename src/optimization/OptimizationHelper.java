@@ -1,12 +1,13 @@
 package optimization;
 
+import regularization.SimilarityRegularizationFeatures;
 import data.Evaluator;
 import inference.SequentialInference;
 import feature.SequentialFeatures;
 
 public class OptimizationHelper {
 	public static void computeHardCounts(SequentialFeatures features,
-			int[][] labels, int instanceID, double[] counts) {
+			int instanceID, int[][] labels, double[] counts) {
 		int length = features.getInstanceLength(instanceID);
 		for (int i = 0; i <= length; i++) {
 			int s = (i == length) ? features.SN : labels[instanceID][i];
@@ -54,6 +55,30 @@ public class OptimizationHelper {
 		}
 	}
 	
+	public static void computeHardCounts(SimilarityRegularizationFeatures graph,
+			int instanceID, int[][] labels, double[][] counts,
+			double scale) {
+		int length = graph.getInstanceLength(instanceID);
+		for (int i = 0; i < length; i++) {
+			int s = labels[instanceID][i];
+			graph.addToCounts(instanceID, i, counts[s], 1.0);
+		}
+	}
+	
+	public static void computeSoftCounts(SimilarityRegularizationFeatures graph,
+			int instanceID, double[][][] edgeMarginals, double[][] counts,
+			double scale) {
+		int length = graph.getInstanceLength(instanceID);
+		for (int i = 0; i < length; i++) {
+			for (int s = 0; s < edgeMarginals[i].length; s++) {
+				for (int sp = 0; sp < edgeMarginals[i][s].length; sp++) {
+					graph.addToCounts(instanceID, i, counts[s],
+							scale * edgeMarginals[i][s][sp]);
+				}
+			}
+		}
+	}
+	
 	public static void testModel(SequentialFeatures features, Evaluator eval,
 			int[][] labels, int[] devList, double[] parameters) {
 		double[] runningAccuracy = new double[3];
@@ -87,5 +112,4 @@ public class OptimizationHelper {
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
 	}
-
 }

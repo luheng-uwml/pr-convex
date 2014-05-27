@@ -66,9 +66,9 @@ public class SupervisedNERExperiment {
 		
 		*/
 		// here lambda = 1 / C
-		RegularizedExponentiatedGradientDescent optimizer =
-				new RegularizedExponentiatedGradientDescent(features,
-						labels, trainList.toArray(), devList.toArray(),  eval,
+		OnlineExponentiatedGradientDescent optimizer =
+				new OnlineExponentiatedGradientDescent(features,
+						labels, trainList.toArray(), devList.toArray(), eval,
 						0.1, 0.5, 1000, 12345);
 		
 		optimizer.optimize();
