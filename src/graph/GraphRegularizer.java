@@ -12,13 +12,18 @@ public class GraphRegularizer {
 	protected SparseVector[] edges;
 	protected int[][] allEdges;
 	protected double[] allEdgeWeights;
-	public final int numInstances, numEdges, numNodes, numTargetStates;
+	public final int numEdges, numNodes, numTargetStates;
+	
+	protected GraphRegularizer(int numTargetStates) {
+		this.numTargetStates = numTargetStates;
+		this.numEdges = 0;
+		this.numNodes = 0;
+	}
 	
 	public GraphRegularizer(int[][] nodes,
 			SparseVector[] edges, int numTargetStates) {
 		this.nodes = nodes;
 		this.edges = edges;
-		this.numInstances = nodes.length;
 		this.numNodes = edges.length;
 		this.numTargetStates = numTargetStates;
 		int edgeCount = 0;
@@ -43,7 +48,7 @@ public class GraphRegularizer {
 		// prepare node counts (for normalization)
 		nodeCounts = new double[numNodes];
 		Arrays.fill(nodeCounts, 0.0);
-		for (int i = 0; i < numInstances; i++) {
+		for (int i = 0; i < nodes.length; i++) {
 			for (int j = 0; j < nodes[i].length; j++) {
 				nodeCounts[nodes[i][j]] ++;
 			}
@@ -57,10 +62,6 @@ public class GraphRegularizer {
 				nodeCounts[nodes[instanceID][j]] ++;
 			}
 		}
-	}
-	
-	public int getInstanceLength(int instanceID) {
-		return nodes[instanceID].length;
 	}
 	
 	public void addToCounts(int instanceID, int position, double[] counts,

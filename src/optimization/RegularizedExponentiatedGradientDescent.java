@@ -61,7 +61,7 @@ public class RegularizedExponentiatedGradientDescent {
 		nodeScores = new double[numInstances][][];
 		logNorm = new double[numInstances];
 		entropy = new double[numInstances];
-		
+
 		workList = new int[trainList.length + devList.length];
 		isLabeled = new boolean[numInstances ];
 		numTrains = trainList.length;
