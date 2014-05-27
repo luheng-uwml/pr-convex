@@ -17,25 +17,20 @@ public class KNNGraphConstructor {
 	int numNodes;
 	int numNeighbors;
 	boolean mutualKNN;
-	String graphPath, ngramPath;
 	int numThreads;
 	double similarityThreshold;
 	
 	public KNNGraphConstructor(SparseVector[] features, int numNeighbors,
-			boolean mutualKNN, double similarityThreshold, String graphPath,
-			String ngramPath, int numThreads) {
+			boolean mutualKNN, double similarityThreshold, int numThreads) {
 		this.features = features;
 		this.numNodes = features.length;
 		this.numNeighbors = numNeighbors;
 		this.mutualKNN = mutualKNN;
 		this.similarityThreshold = similarityThreshold;
 		this.numThreads = numThreads;
-		this.graphPath = graphPath;
-		this.ngramPath = ngramPath;
 	}
 	
-	public void run() throws UnsupportedEncodingException,
-		FileNotFoundException, IOException {
+	public void run() {
 		System.out.println(String.format("Starting to build graph with " +
 				"%d nodes, and %d neighbors with %s KNN method. ",
 				numNodes, numNeighbors, (mutualKNN ? "mutual" : "symmetric")));
@@ -56,7 +51,7 @@ public class KNNGraphConstructor {
 				threads[i].join();
 			} catch (InterruptedException e) { }
 		}
-		symmetrifyAndSaveGraph();
+		symmetrifyGraph();
 	}
 
 	public SparseVector[] getEdgeList() {
@@ -118,14 +113,10 @@ public class KNNGraphConstructor {
 		}
 	}
 	
-	public void symmetrifyAndSaveGraph()
-			throws UnsupportedEncodingException, FileNotFoundException,
-			IOException  {
-		// Symmetrifying Graph
+	public void symmetrifyGraph() {
 		for (int i = 0; i < numNodes; i++) {
 			edges[i].freeze();
 		}
-		int nrEdges = 0, nrEmptyNodes = 0;
 		if (!mutualKNN) {
 			for (int i = 0; i < numNodes; i++) {
 				for (Iterator<Edge> itr = edges[i].iterator();
@@ -135,6 +126,12 @@ public class KNNGraphConstructor {
 				}
 			}
 		}
+	}
+	
+	public void saveGraph(String graphPath, String ngramPath)
+			throws UnsupportedEncodingException, FileNotFoundException,
+				IOException {
+		int nrEdges = 0, nrEmptyNodes = 0;
 		double weightNorm = 0;
 		double avgDegree = 0, maxDegree = -1, minDegree = Double.MAX_VALUE;
 		double avgFreqEmpty = 0, avgFreqNonEmpty = 0; 

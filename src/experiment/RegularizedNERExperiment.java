@@ -1,5 +1,8 @@
 package experiment;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import optimization.*;
@@ -11,6 +14,7 @@ import feature.NGramFeatureExtractor;
 import feature.SequentialFeatures;
 import feature.SparseVector;
 import gnu.trove.list.array.TIntArrayList;
+import graph.KNNGraphConstructor;
 
 public class RegularizedNERExperiment {
 	
@@ -57,8 +61,12 @@ public class RegularizedNERExperiment {
 		int[][] ngramIDs = ngramExtractor.ngramIDs;
 		SparseVector[] ngramFeatures = ngramExtractor.ngramFeatures;
 		
-		// TODO: contruct KNN graph using the features
+		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
+				ngramFeatures, 10, true, 1e-2, 4);
+		graphConstructor.run();
+		SparseVector[] edges = graphConstructor.getEdgeList();
 		
+		// TODO:  regularization features (ngramIDs[][], edges[]) 
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
