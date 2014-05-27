@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import optimization.*;
+import regularization.SimilarityRegularizationFeatures;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
@@ -33,24 +34,27 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
+		int numTrains = 1000;
+		int numInstances =  numTrains + corpusDev.size();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
-		allInstances.addAll(corpusTrain.instances);
-		allInstances.addAll(corpusDev.instances);
-		
-		int numTrains = corpusTrain.instances.size();
-		int[][] labels = new int[allInstances.size()][];
 		TIntArrayList trainList = new TIntArrayList(),
 					  devList = new TIntArrayList();
-		for (int i = 0; i < allInstances.size(); i++) {
-			labels[i] = i < numTrains ? corpusTrain.instances.get(i).getLabels() :
-				corpusDev.instances.get(i-numTrains).getLabels();
-			//if (i < numTrains) {
-			if (i < 1000) {
-				trainList.add(i);
-			} else if (i >= numTrains) {
-				devList.add(i);
+		int[][] labels = new int[numInstances][];
+		for (int i = 0; i < corpusTrain.size(); i++) {
+			if (i < numTrains) {
+				int instanceID = allInstances.size();
+				allInstances.add(corpusTrain.instances.get(i));
+				trainList.add(instanceID);
+				labels[instanceID] = corpusTrain.instances.get(i).getLabels();
 			}
 		}
+		for (int i = 0; i < corpusDev.size(); i++) {
+			int instanceID = allInstances.size();
+			allInstances.add(corpusDev.instances.get(i));
+			devList.add(instanceID);
+			labels[instanceID] = corpusDev.instances.get(i).getLabels();
+		}
+		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				allInstances, 5);
 		extractor.printInfo();
@@ -58,24 +62,22 @@ public class RegularizedNERExperiment {
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
 				corpusTrain, allInstances);
 		ngramExtractor.printInfo();
-		int[][] ngramIDs = ngramExtractor.ngramIDs;
-		SparseVector[] ngramFeatures = ngramExtractor.ngramFeatures;
 		
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramFeatures, 10, true, 1e-2, 4);
+				ngramExtractor.ngramFeatures, 10, true, 1e-2, 4);
 		graphConstructor.run();
-		SparseVector[] edges = graphConstructor.getEdgeList();
-		
-		// TODO:  regularization features (ngramIDs[][], edges[]) 
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
+		SimilarityRegularizationFeatures graph =
+				new SimilarityRegularizationFeatures(ngramExtractor.ngramIDs,
+					graphConstructor.getEdgeList(), features.numTargetStates);
 		
 		// here lambda = 1 / C
 		RegularizedExponentiatedGradientDescent optimizer =
-				new RegularizedExponentiatedGradientDescent(features,
-						labels, trainList.toArray(), devList.toArray(),  eval,
-						1, 0.5, 1000, 12345);
+				new RegularizedExponentiatedGradientDescent(features, graph,
+						labels, trainList.toArray(), devList.toArray(), eval,
+						1, 1, 0.5, 1000, 12345);
 		
 		optimizer.optimize();
 	}

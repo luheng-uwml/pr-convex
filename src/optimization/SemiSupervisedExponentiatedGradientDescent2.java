@@ -112,7 +112,7 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 	
 	private void initializeObjective() {
 		for (int instanceID : trainList) {
-			OptimizationHelper.computeHardCounts(features, labels, instanceID,
+			OptimizationHelper.computeHardCounts(features, instanceID, labels,
 					empiricalCounts);
 		}
 		for (int instanceID : workList) {
