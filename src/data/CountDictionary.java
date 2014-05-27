@@ -107,4 +107,12 @@ public class CountDictionary {
 	public String getString(int index) {
 		return index2str.get(index);
 	}
+	
+	public int getTotalCount() {
+		int totalCount = 0;
+		for (int c : index2count) {
+			totalCount += c;
+		}
+		return totalCount;
+	}
 }

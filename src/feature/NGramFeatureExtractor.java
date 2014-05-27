@@ -9,8 +9,8 @@ import data.NERSequence;
 public class NGramFeatureExtractor {
 	NERCorpus corpus;
 	CountDictionary ngramDict, ngramContextFeatureDict;
-	int[][] ngramIDs; // sentence_id x position 
-	SparseVector[] ngramFeatures;  
+	public int[][] ngramIDs; // sentence_id x position 
+	public SparseVector[] ngramFeatures;  
 	int ngramSize, contextSize, minFeatureFrequency, numNGrams;
 	int[][] featureTemplate = { {-1, 0, 1}, {-2, -1, 0}, {0, 1, 2}, {-2, 0, 2},
 			{-1, 1}, {-2, 2}, {-2, -1}, {1, 2}, {-2}, {-1}, {0}, {1}, {2}};
@@ -29,6 +29,7 @@ public class NGramFeatureExtractor {
 		this.minFeatureFrequency = minFeatureFrequency;
 		extractNGrams(instances);
 		computeNGramFeatures(instances);
+		normalizeNGramFeatures();
 	}
 	
 	public void extractNGrams(ArrayList<NERSequence> instances) {
@@ -55,8 +56,10 @@ public class NGramFeatureExtractor {
 				ngramIDs[instanceID][i] = ngramID;
 			}
 		}
-		System.out.println("Extracted " + ngramDict.size() + " ngrams");
+		numNGrams = ngramDict.size();
+		System.out.println("Extracted " + numNGrams + " ngrams");
 	}
+	
 	public void computeNGramFeatures(ArrayList<NERSequence> instances) {
 		ngramContextFeatureDict = new CountDictionary();
 		DynamicSparseVector[] tFeatures = new DynamicSparseVector[numNGrams];
@@ -106,6 +109,22 @@ public class NGramFeatureExtractor {
 			if (fid >= 0) {
 				fvec.add(fid, 1);
 			}
+		}
+	}
+	
+	// Normalize feature vector using PMI (point-wise mutual information)
+	private void normalizeNGramFeatures() {
+		int totalNGrams = ngramDict.getTotalCount();
+		for (int i = 0; i < numNGrams; i++) {
+			SparseVector fvec = ngramFeatures[i];
+			for (int j = 0; j < fvec.length;j++) {
+				int fid = fvec.indices[j]; 
+				double featFreq = 1.0 * ngramContextFeatureDict.getCount(fid);
+				double ngramProb = 1.0 * ngramDict.getCount(i) / totalNGrams;
+				fvec.values[j] = Math.log(fvec.values[j]) -
+						Math.log(ngramProb) - Math.log(featFreq);
+			}
+			fvec.normalize();
 		}
 	}
 	
