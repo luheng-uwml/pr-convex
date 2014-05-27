@@ -1,4 +1,4 @@
-package regularization;
+package graph;
 
 import java.util.Arrays;
 
@@ -7,7 +7,7 @@ import feature.DynamicSparseVector;
 import feature.SparseVector;
 import gnu.trove.set.hash.TIntHashSet;
 
-public class SimilarityRegularizationFeatures {
+public class GraphRegularizer {
 	protected int[][] nodes;   
 	protected double[] nodeCounts;
 	protected SparseVector[] edges;
@@ -15,7 +15,7 @@ public class SimilarityRegularizationFeatures {
 	protected double[] allEdgeWeights;
 	public final int numInstances, numEdges, numNodes, numTargetStates;
 	
-	public SimilarityRegularizationFeatures(int[][] nodes,
+	public GraphRegularizer(int[][] nodes,
 			SparseVector[] edges, int numTargetStates) {
 		this.nodes = nodes;
 		this.edges = edges;

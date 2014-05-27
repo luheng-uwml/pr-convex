@@ -6,12 +6,12 @@ import java.util.Random;
 import inference.SequentialInference;
 import data.Evaluator;
 import feature.SequentialFeatures;
-import regularization.SimilarityRegularizationFeatures;
+import graph.GraphRegularizer;
 
 public class RegularizedExponentiatedGradientDescent {
 	SequentialFeatures features;
 	SequentialInference model;
-	SimilarityRegularizationFeatures graph;
+	GraphRegularizer graph;
 	Evaluator eval;
 	int[][] labels;
 	int[] trainList, devList, workList;
@@ -27,7 +27,7 @@ public class RegularizedExponentiatedGradientDescent {
 	static final double stoppingCriterion = 1e-5;
 	
 	public RegularizedExponentiatedGradientDescent(
-			SequentialFeatures features, SimilarityRegularizationFeatures graph,
+			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double initialStepSize,
 			int maxNumIterations, int randomSeed) {

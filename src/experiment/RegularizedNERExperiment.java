@@ -6,7 +6,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import optimization.*;
-import regularization.SimilarityRegularizationFeatures;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
@@ -15,6 +14,7 @@ import feature.NGramFeatureExtractor;
 import feature.SequentialFeatures;
 import feature.SparseVector;
 import gnu.trove.list.array.TIntArrayList;
+import graph.GraphRegularizer;
 import graph.KNNGraphConstructor;
 
 public class RegularizedNERExperiment {
@@ -41,20 +41,23 @@ public class RegularizedNERExperiment {
 					  devList = new TIntArrayList();
 		int[][] labels = new int[numInstances][];
 		for (int i = 0; i < corpusTrain.size(); i++) {
+			int instanceID = allInstances.size();
+			allInstances.add(corpusTrain.instances.get(i));
+			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
 			if (i < numTrains) {
-				int instanceID = allInstances.size();
-				allInstances.add(corpusTrain.instances.get(i));
 				trainList.add(instanceID);
-				labels[instanceID] = corpusTrain.instances.get(i).getLabels();
+			} else {
+				devList.add(instanceID);
 			}
 		}
+		/*
 		for (int i = 0; i < corpusDev.size(); i++) {
 			int instanceID = allInstances.size();
 			allInstances.add(corpusDev.instances.get(i));
 			devList.add(instanceID);
 			labels[instanceID] = corpusDev.instances.get(i).getLabels();
 		}
-		
+		*/
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				allInstances, 5);
 		extractor.printInfo();
@@ -69,15 +72,15 @@ public class RegularizedNERExperiment {
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
-		SimilarityRegularizationFeatures graph =
-				new SimilarityRegularizationFeatures(ngramExtractor.ngramIDs,
+		GraphRegularizer graph =
+				new GraphRegularizer(ngramExtractor.ngramIDs,
 					graphConstructor.getEdgeList(), features.numTargetStates);
 		
 		// here lambda = 1 / C
 		RegularizedExponentiatedGradientDescent optimizer =
 				new RegularizedExponentiatedGradientDescent(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
-						1, 1, 0.5, 1000, 12345);
+						1, 5, 0.5, 1000, 12345);
 		
 		optimizer.optimize();
 	}

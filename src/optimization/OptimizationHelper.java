@@ -1,9 +1,9 @@
 package optimization;
 
-import regularization.SimilarityRegularizationFeatures;
 import data.Evaluator;
 import inference.SequentialInference;
 import feature.SequentialFeatures;
+import graph.GraphRegularizer;
 
 public class OptimizationHelper {
 	public static void computeHardCounts(SequentialFeatures features,
@@ -55,7 +55,7 @@ public class OptimizationHelper {
 		}
 	}
 	
-	public static void computeHardCounts(SimilarityRegularizationFeatures graph,
+	public static void computeHardCounts(GraphRegularizer graph,
 			int instanceID, int[][] labels, double[][] counts,
 			double scale) {
 		int length = graph.getInstanceLength(instanceID);
@@ -65,7 +65,7 @@ public class OptimizationHelper {
 		}
 	}
 	
-	public static void computeSoftCounts(SimilarityRegularizationFeatures graph,
+	public static void computeSoftCounts(GraphRegularizer graph,
 			int instanceID, double[][][] edgeMarginals, double[][] counts,
 			double scale) {
 		int length = graph.getInstanceLength(instanceID);
