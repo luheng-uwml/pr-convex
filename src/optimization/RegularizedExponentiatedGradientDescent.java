@@ -151,11 +151,12 @@ public class RegularizedExponentiatedGradientDescent {
 				computePrimalObjective();
 			}
 			if (objective < prevObjective) {
-				if (iteration < 100) {
-					stepSize *= 1.02;
-				} else {
+				//if (iteration < 100) {
+				stepSize *= 1.02;
+				//}
+				/*else {
 					stepSize *= 1.0 * iteration / (iteration + 1);
-				}
+				}*/
 			} else {
 				stepSize *= 0.5;
 			}
