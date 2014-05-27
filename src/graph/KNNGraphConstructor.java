@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
+import feature.DynamicSparseVector;
 import feature.SparseVector;
 
 public class KNNGraphConstructor {
@@ -58,9 +59,20 @@ public class KNNGraphConstructor {
 		symmetrifyAndSaveGraph();
 	}
 
-	// TODO: implement me
 	public SparseVector[] getEdgeList() {
-		
+		SparseVector[] tEdges = new SparseVector[numNodes];
+		for (int i = 0; i < numNodes; i++) {
+			DynamicSparseVector tEdge = new DynamicSparseVector();
+			for (Iterator<Edge> itr = edges[i].iterator(); itr.hasNext(); ) {
+				Edge e = itr.next();
+				if (!edges[e.neighbor].contains(i) || e.weight <= 0) {
+					continue;
+				}
+				tEdge.add(e.neighbor, e.weight);
+			}
+			tEdges[i] = new SparseVector(tEdge);
+		}
+		return tEdges;
 	}
 	
 	protected synchronized void print(String string) {
@@ -171,5 +183,10 @@ public class KNNGraphConstructor {
 				"Averaged non-empty node frequency: %f\n",
 				avgFreqEmpty / nrEmptyNodes, 
 				avgFreqNonEmpty / (numNodes - nrEmptyNodes)));
+	}
+	
+	// TODO: estimate graph quality using gold labels
+	public void validate(int[][] nodeIDs, int[][] labels) {
+		
 	}
 }
