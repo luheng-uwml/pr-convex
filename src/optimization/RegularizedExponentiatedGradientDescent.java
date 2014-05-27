@@ -159,12 +159,17 @@ public class RegularizedExponentiatedGradientDescent {
 			} else {
 				stepSize *= 0.5;
 			}
-			prevObjective = objective;
 			if (Math.abs((prevObjective - objective) / prevObjective) <
 					stoppingCriterion) {
 				break;
 			}
+			prevObjective = objective;
 		}
+		System.out.println("Optimization finished.");
+		validate(trainList);
+		validate(devList);
+		computeAccuracy(devList);
+		computePrimalObjective();
 	}
 	
 	private void updatePrimalParameters() {
