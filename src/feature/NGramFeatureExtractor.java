@@ -8,7 +8,8 @@ import data.NERSequence;
 
 public class NGramFeatureExtractor {
 	NERCorpus corpus;
-	CountDictionary ngramDict, ngramFeatureDict;
+	public CountDictionary ngramDict;
+	CountDictionary ngramFeatureDict;
 	public int[][] ngramIDs; // sentence_id x position 
 	public SparseVector[] ngramFeatures;  
 	int ngramSize, numNGrams;

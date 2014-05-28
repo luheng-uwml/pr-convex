@@ -2,6 +2,7 @@ package graph;
 
 import java.util.Arrays;
 
+import data.CountDictionary;
 import optimization.ArrayHelper;
 import feature.SparseVector;
 import gnu.trove.set.hash.TIntHashSet;
@@ -133,5 +134,59 @@ public class GraphRegularizer {
 			}
 		}
 		return computeTotalPenalty(counts);
+	}
+	
+	// TODO: estimate graph quality using gold labels
+	public void validate(int[][] labels, CountDictionary ngramDcits) {
+		double[][] counts = new double[numTargetStates][numNodes];
+		int[] dominantLabels = new int[numNodes];
+		double[] purity = new double[numNodes];
+		int badEdges = 0;
+		double totalPenalty = 0.0, avgPurity = 0.0;
+		ArrayHelper.deepFill(counts, 0.0);
+		ArrayHelper.deepFill(purity, 0.0);
+		for (int i = 0; i < labels.length; i++) {
+			for (int j = 0; j < labels[i].length; j++) {
+				int nodeID = nodes[i][j];
+				int stateID = labels[i][j];
+				counts[stateID][nodeID] += 1.0 / nodeCounts[nodeID];
+			}
+		}
+		// compute dominant labels
+		for (int i = 0; i < numNodes; i++) {
+			double nodeSum = counts[0][i];
+			int maxLabel = 0; 
+			for (int j = 1; j < numTargetStates; j++) {
+				nodeSum += counts[j][i];
+				if (counts[j][i] > counts[maxLabel][i]) {
+					maxLabel = j;
+				}
+			}
+			if (Math.abs(nodeSum - 1.0) > 1e-5) {
+				System.out.println("unnormalized node!!\t" + nodeSum);
+			}
+			dominantLabels[i] = maxLabel;
+			purity[i] = counts[maxLabel][i];
+			avgPurity += purity[i];
+		}
+		avgPurity /= numNodes;
+		for (int i = 0; i < numEdges; i++) {
+			int n1 = allEdges[i][0];
+			int n2 = allEdges[i][1];
+			double weight = allEdgeWeights[i];
+			for (int j = 0; j < numTargetStates; j++) {
+				double diff = counts[j][n1] - counts[j][n2];
+				totalPenalty += weight * diff * diff; 
+			}
+			if (dominantLabels[n1] != dominantLabels[n2]) {
+				badEdges ++;
+			}
+		}
+		System.out.println(String.format("Total penalty::\t%.5f",
+				2 * totalPenalty));
+		System.out.println(String.format("Bad edges::\t%d (%.5f%%)",
+				badEdges, 100.0 * badEdges / numEdges));
+		System.out.println(String.format("Averaged purity::\t%.5f",
+				avgPurity));
 	}
 }

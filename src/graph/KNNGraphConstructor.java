@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
+import data.CountDictionary;
 import feature.DynamicSparseVector;
 import feature.SparseVector;
 
@@ -189,10 +190,5 @@ public class KNNGraphConstructor {
 		}
 		fout.close();
 		*/
-	}
-	
-	// TODO: estimate graph quality using gold labels
-	public void validate(int[][] nodeIDs, int[][] labels) {
-		
 	}
 }

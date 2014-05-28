@@ -39,11 +39,7 @@ public class RegularizedNERExperiment {
 			int instanceID = allInstances.size();
 			allInstances.add(corpusTrain.instances.get(i));
 			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
-			if (i < numTrains) {
-				trainList.add(instanceID);
-			} /*else if (i < numInstances) {
-				devList.add(instanceID);
-			}*/
+			trainList.add(instanceID);
 		}
 		// add from original DEV corpus
 		for (int i = 0; i < Math.min(numInstances - numTrains,
@@ -64,7 +60,7 @@ public class RegularizedNERExperiment {
 				corpusTrain, allInstances);
 		ngramExtractor.printInfo();
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.ngramFeatures, 10, true, 0, 8);
+				ngramExtractor.ngramFeatures, 10, true, 0.1, 8);
 		graphConstructor.run();
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
@@ -76,6 +72,8 @@ public class RegularizedNERExperiment {
 		
 		double goldPenalty = graph.computeTotalPenalty(labels);
 		System.out.println("gold penalty::\t" + goldPenalty);
+		
+		graph.validate(labels, ngramExtractor.ngramDict);
 		
 		// here lambda = 1 / C
 		RegularizedExponentiatedGradientDescent optimizer =
