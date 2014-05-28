@@ -66,9 +66,9 @@ public class RegularizedNERExperiment {
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
 		GraphRegularizer graph =
-				//new GraphRegularizer(ngramExtractor.ngramIDs,
-				//	graphConstructor.getEdgeList(), features.numTargetStates);
-				new DummyGraphRegularizer(features.numTargetStates);
+				new GraphRegularizer(ngramExtractor.ngramIDs,
+					graphConstructor.getEdgeList(), features.numTargetStates);
+				//new DummyGraphRegularizer(features.numTargetStates);
 		
 		double goldPenalty = graph.computeTotalPenalty(labels);
 		System.out.println("gold penalty::\t" + goldPenalty);
