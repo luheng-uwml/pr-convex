@@ -29,41 +29,50 @@ public class RegularizedNERExperiment {
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
 		int numTrains = 1000;
-		int numInstances = 2000; //corpusTrain.size();
+		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
 		TIntArrayList trainList = new TIntArrayList(),
 					  devList = new TIntArrayList();
 		int[][] labels = new int[numInstances][];
-		for (int i = 0; i < Math.min(numInstances, corpusTrain.size()); i++) {
+		// add from original TRAIN corpus
+		for (int i = 0; i < Math.min(numTrains, corpusTrain.size()); i++) {
 			int instanceID = allInstances.size();
 			allInstances.add(corpusTrain.instances.get(i));
 			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
 			if (i < numTrains) {
 				trainList.add(instanceID);
-			} else if (i < numInstances) {
+			} /*else if (i < numInstances) {
 				devList.add(instanceID);
-			}
+			}*/
 		}
+		// add from original DEV corpus
+		for (int i = 0; i < Math.min(numInstances - numTrains,
+				corpusDev.size()); i++) {
+			int instanceID = allInstances.size();
+			allInstances.add(corpusDev.instances.get(i));
+			labels[instanceID] = corpusDev.instances.get(i).getLabels();
+			devList.add(instanceID);
+		}
+		System.out.println("num trains::\t" + numTrains +
+						   "\tnum all::\t" + numInstances);
 		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				allInstances, 3);
+				allInstances, 5);
 		extractor.printInfo();
 		
-		/*
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
 				corpusTrain, allInstances);
 		ngramExtractor.printInfo();
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
 				ngramExtractor.ngramFeatures, 10, true, 0, 8);
 		graphConstructor.run();
-		*/
 		
 		SequentialFeatures features = extractor.getSequentialFeatures();
 		Evaluator eval = new Evaluator(corpusTrain);
 		GraphRegularizer graph =
-				//new GraphRegularizer(ngramExtractor.ngramIDs,
-				//	graphConstructor.getEdgeList(), features.numTargetStates);
-				new DummyGraphRegularizer(features.numTargetStates);
+				new GraphRegularizer(ngramExtractor.ngramIDs,
+					graphConstructor.getEdgeList(), features.numTargetStates);
+				//new DummyGraphRegularizer(features.numTargetStates);
 		
 		double goldPenalty = graph.computeTotalPenalty(labels);
 		System.out.println("gold penalty::\t" + goldPenalty);
@@ -72,7 +81,7 @@ public class RegularizedNERExperiment {
 		RegularizedExponentiatedGradientDescent optimizer =
 				new RegularizedExponentiatedGradientDescent(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
-						1, 0, 0.5, 1000, 12345);
+						1, 100, 0.5, 1000, 12345);
 		
 		optimizer.optimize();
 	}

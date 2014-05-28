@@ -111,7 +111,7 @@ public class NGramFeatureExtractor {
 				double featFreq = 1.0 * ngramFeatureDict.getCount(fid);
 				double ngramProb = 1.0 * ngramDict.getCount(i) / totalNGrams;
 				fvec.values[j] = Math.log(fvec.values[j]) -
-						Math.log(ngramProb) - Math.log(featFreq);
+						Math.log(ngramProb) - Math.log(featFreq);			
 			}
 			fvec.normalize();
 		}

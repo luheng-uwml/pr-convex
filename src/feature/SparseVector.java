@@ -40,6 +40,7 @@ public class SparseVector {
 		if (norm == 0) {
 			return;
 		}
+		norm = Math.sqrt(norm);
 		for (int i = 0; i < length; i++) {
 			values[i] /= norm;
 		}
