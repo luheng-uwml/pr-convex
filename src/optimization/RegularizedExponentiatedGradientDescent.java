@@ -20,7 +20,7 @@ public class RegularizedExponentiatedGradientDescent {
 			unlabeledCounts, logNorm, entropy, trainRatio;
 	double[][] nodeCounts; // states x nodes
 	double[][][] edgeScores, nodeScores; // scores for each instance
-	double lambda1, lambda2, objective, initialStepSize;
+	double lambda1, lambda2, objective, initialStepSize, graphPenalty;
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
@@ -141,8 +141,9 @@ public class RegularizedExponentiatedGradientDescent {
 			objective -= entropy[instanceID];
 		}
 		updatePrimalParameters();
+		graphPenalty = graph.computeTotalPenalty(nodeCounts);
 		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-		objective += 0.25 * lambda2 * graph.computeTotalPenalty(nodeCounts);
+		objective += 0.25 * lambda2 * graphPenalty;
 		System.out.println("initial objective::\t" + objective);
 	}
 	
@@ -158,7 +159,8 @@ public class RegularizedExponentiatedGradientDescent {
 					"\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective +
 					"\tPREV::\t" + prevObjective +
-					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters));
+					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
+					"\tGRAPH::\t" + graphPenalty);
 			if (iteration % 10 == 9) {
 				validate(trainList);
 				validate(devList);
@@ -195,23 +197,25 @@ public class RegularizedExponentiatedGradientDescent {
 		double[][][] tMarginals = new double[length + 1][numStates][numStates];
 		double[][] tEdgeGradient = new double[numStates][numStates],
 					tNodeGradient = new double[length][numTargetStates];
-		
+		double tPenalty;
 		computeGradient(instanceID, tNodeGradient, tEdgeGradient);
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
 				null, tMarginals);
+		tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
+		graphPenalty -= tPenalty;
 		objective += entropy[instanceID];
 		objective -= 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-		objective -= 0.25 * lambda2 * graph.computeTotalPenalty(instanceID,
-				nodeCounts);
+		objective -= 0.25 * lambda2 * tPenalty;
 		subtractFromSoftCounts(instanceID, tMarginals);
 		updateParameters(instanceID, tNodeGradient, tEdgeGradient, stepSize);
 		updateEntropy(instanceID, tMarginals);
 		updateSoftCounts(instanceID, tMarginals);
 		updatePrimalParameters();
+		tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
+		graphPenalty += tPenalty;
 		objective -= entropy[instanceID];
 		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-		objective += 0.25 * lambda2 * graph.computeTotalPenalty(instanceID,
-				nodeCounts);
+		objective += 0.25 * lambda2 * tPenalty;
 	}
 	
 	private void updateEntropy(int instanceID, double[][][] edgeMarginals) {
