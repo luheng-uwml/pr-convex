@@ -101,9 +101,8 @@ public class RegularizedExponentiatedGradientDescent {
 		// features that are not in training data should be ignored 
 		for (int i = 0; i < numFeatures; i++) {
 			if (trainFeatureCounts[i] > 0) {
-				//trainRatio[i] = 1.0 * trainFeatureCounts[i] /
-				//		(trainFeatureCounts[i] + devFeatureCounts[i]);
-				trainRatio[i] = 1.0;
+				trainRatio[i] = 1.0 / trainFeatureCounts[i] *
+						(trainFeatureCounts[i] + devFeatureCounts[i]);
 			} else {
 				trainRatio[i] = 0.0;
 			}
@@ -116,7 +115,9 @@ public class RegularizedExponentiatedGradientDescent {
 			}
 		}
 		System.out.println("Averaged non-zero train ratio::\t" +
-				avgRatio / nnzRatio);
+				avgRatio / nnzRatio +
+				".\tNumber of non-zero train ratio elements::\t" +
+				(int) nnzRatio + " out of all " + numFeatures + " features.");
 	}
 	
 	private void initializeObjective() {
@@ -161,7 +162,7 @@ public class RegularizedExponentiatedGradientDescent {
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tGRAPH::\t" + graphPenalty);
-			if (iteration % 10 == 9) {
+			if (iteration % 5 == 4) {
 				validate(trainList);
 				validate(devList);
 				computeAccuracy(devList);
@@ -187,8 +188,12 @@ public class RegularizedExponentiatedGradientDescent {
 	
 	private void updatePrimalParameters() {
 		for (int i = 0; i < numFeatures; i++) {
-			parameters[i] = empiricalCounts[i] - labeledCounts[i];
-			parametersGrad[i] = parameters[i];
+			if (trainRatio[i] > 0) {
+				//parameters[i] = trainRatio[i] * empiricalCounts[i] - 
+				//				(labeledCounts[i] + unlabeledCounts[i]);
+				parameters[i] = empiricalCounts[i] - labeledCounts[i];
+				parametersGrad[i] = parameters[i];
+			}
 		}
 	}
 	
@@ -274,7 +279,7 @@ public class RegularizedExponentiatedGradientDescent {
 	}
 	
 	private void computeGradient(int instanceID, double[][] nodeGradient,
-			double[][] edgeGradient) {
+			double[][] edgeGradient) { 
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
 				edgeGradient[i][j] = edgeScores[instanceID][i][j] -
@@ -339,6 +344,14 @@ public class RegularizedExponentiatedGradientDescent {
 				(2 * precision * recall) / (precision + recall) : 0.0;
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
+		
+		// see discrpency between unlabeled counts and gold
+		double[] diff = new double[numFeatures];
+		for (int i = 0; i < numFeatures; i++) {
+			diff[i] = empiricalCounts[i] * trainRatio[i] -
+					(labeledCounts[i] + unlabeledCounts[i]);
+		}
+		System.out.println("diff::\t" + ArrayHelper.l2NormSquared(diff));
 	}
 	
 

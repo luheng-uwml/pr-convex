@@ -3,6 +3,7 @@ package graph;
 import java.util.Arrays;
 
 import data.CountDictionary;
+import data.NERCorpus;
 import optimization.ArrayHelper;
 import feature.SparseVector;
 import gnu.trove.set.hash.TIntHashSet;
@@ -137,7 +138,8 @@ public class GraphRegularizer {
 	}
 	
 	// TODO: estimate graph quality using gold labels
-	public void validate(int[][] labels, CountDictionary ngramDcits) {
+	public void validate(int[][] labels, CountDictionary labelDict,
+			CountDictionary ngramDict) {
 		double[][] counts = new double[numTargetStates][numNodes];
 		int[] dominantLabels = new int[numNodes];
 		double[] purity = new double[numNodes];
@@ -180,6 +182,11 @@ public class GraphRegularizer {
 			}
 			if (dominantLabels[n1] != dominantLabels[n2]) {
 				badEdges ++;
+				// print bad edges
+				System.out.println(ngramDict.getString(n1) + "\t" +
+							ngramDict.getString(n2) + "\t" + weight + "\t" +
+							labelDict.getString(dominantLabels[n1]) + "\t" +
+							labelDict.getString(dominantLabels[n2]));
 			}
 		}
 		System.out.println(String.format("Total penalty::\t%.5f",

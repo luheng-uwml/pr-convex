@@ -50,7 +50,8 @@ public class SupervisedNERExperiment {
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				allInstances, 5);
 		extractor.printInfo();
-		SequentialFeatures features = extractor.getSequentialFeatures();
+		SequentialFeatures features = extractor.getSequentialFeatures(
+				allInstances);
 		Evaluator eval = new Evaluator(corpusTrain);
 		/*
 		BatchGradientDescent optimizer = new BatchGradientDescent(features,

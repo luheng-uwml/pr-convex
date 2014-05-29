@@ -3,10 +3,8 @@ package data;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Iterator;
 
 import feature.SparseVector;
-import graph.Edge;
 
 public class IOHelper {
 	public static String printJoin(int[] strIDs, CountDictionary strDict) {

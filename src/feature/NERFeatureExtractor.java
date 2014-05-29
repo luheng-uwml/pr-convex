@@ -17,11 +17,11 @@ public class NERFeatureExtractor {
 			ArrayList<NERSequence> instances, int minFeatureFrequency) {
 		this.corpus = corpus;
 		this.minFeatureFrequency = minFeatureFrequency;
-		computeEdgeFeatures();
-		computeNodeFeatures(instances);
+		extractEdgeFeatures();
+		extractNodeFeatures(instances);
 	}
 	
-	public void computeEdgeFeatures() {
+	public void extractEdgeFeatures() {
 		edgeFeatureDict = new CountDictionary();
 		stateDict = new CountDictionary(corpus.nerDict);
 		startStateID = stateDict.addString("O-START"); // dummy start state
@@ -30,7 +30,7 @@ public class NERFeatureExtractor {
 		edgeFeatures = new SparseVector[numStates][numStates];
 		for (int i = 0; i < numStates; i++) { // current state
 			for (int j = 0; j < numStates; j++) { // prev state
-				if (j == endStateID) {
+				if (i == startStateID || j == endStateID) {
 					continue;
 				}
 				edgeFeatures[i][j] = addEdgeFeatures(
@@ -40,7 +40,7 @@ public class NERFeatureExtractor {
 		numEdgeFeatures = edgeFeatureDict.size();
 	}
 	
-	public void computeNodeFeatures(ArrayList<NERSequence> instances) {
+	public void extractNodeFeatures(ArrayList<NERSequence> instances) {
 		CountDictionary rawFeatureDict = new CountDictionary();
 		for (NERSequence instance : instances) {
 			for (int i = 0; i < instance.length; i++) {
@@ -50,20 +50,21 @@ public class NERFeatureExtractor {
 		}
 		nodeFeatureDict = new CountDictionary(rawFeatureDict,
 				minFeatureFrequency);
-		nodeFeatures = new SparseVector[instances.size()][]; 
+		numNodeFeatures = nodeFeatureDict.size();
+	}
+	
+	public SequentialFeatures getSequentialFeatures(
+			ArrayList<NERSequence> instances) {
+		nodeFeatures = new SparseVector[instances.size()][];
 		for (int i = 0; i < instances.size(); i++) {
 			NERSequence instance = instances.get(i);
 			nodeFeatures[i] = new SparseVector[instance.length];
 			for (int j = 0; j < instance.length; j++) {
 				// precompute = false
-				nodeFeatures[i][j] = addNodeFeatures(instance, j,
-						nodeFeatureDict, false); 
+				nodeFeatures[i][j] =
+					addNodeFeatures(instance, j, nodeFeatureDict, false); 
 			}
 		}
-		numNodeFeatures = nodeFeatureDict.size();
-	}
-	
-	public SequentialFeatures getSequentialFeatures() {
 		return new SequentialFeatures(nodeFeatures, edgeFeatures,
 				numNodeFeatures, numEdgeFeatures);
 	}
