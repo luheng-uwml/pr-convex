@@ -72,6 +72,24 @@ public class SequentialFeatures {
 		edgeFeatures[stateID][prevStateID].addTo(counts, weight);
 	}
 	
+	public void addEdgeToCounts(int instanceID, int stateID, int prevStateID,
+			double[] counts, double weight) {
+		if (Double.isInfinite(weight) || Double.isNaN(weight)) {
+			return;
+		}
+		edgeFeatures[stateID][prevStateID].addTo(counts, weight);
+	}
+	
+	public void addNodeToCounts(int instanceID, int position, int stateID,
+			double[] counts, double weight) {
+		if (Double.isInfinite(weight) || Double.isNaN(weight) ||
+			stateID >= numTargetStates) {
+			return;
+		}
+		int offset = numEdgeFeatures + stateID * numNodeFeatures;
+		nodeFeatures[instanceID][position].addTo(counts, weight, offset);
+	}
+	
 	protected void countEdgeFeature(int stateID, int prevStateID, int scale,
 			int[] counts) {
 		SparseVector fvec = edgeFeatures[stateID][prevStateID];
