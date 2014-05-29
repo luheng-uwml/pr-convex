@@ -88,15 +88,13 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 			OptimizationHelper.computeHardCounts(features, instanceID, labels,
 					empiricalCounts);
 		}
-		for (int instanceID : workList) {
+		for (int instanceID : trainList) {
 			int length = features.getInstanceLength(instanceID);
-			double[][][] edgeMarginals =
+			double[][][] tMarginals =
 					new double[length + 1][numStates][numStates];
-			updateEntropy(instanceID, edgeMarginals);
-			updateSoftCounts(instanceID, edgeMarginals, 1.0);
-			if (isLabeled[instanceID]) {
-				objective -= entropy[instanceID];
-			}
+			updateEntropy(instanceID, tMarginals);
+			updateSoftCounts(instanceID, tMarginals, 1.0);
+			objective -= entropy[instanceID];
 		}
 		updatePrimalParameters();
 		computeTotalSemiSupervisedPenalty();
@@ -108,19 +106,20 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 	public void optimize() {
 		double stepSize = initialStepSize;
 		double prevObjective = objective;
-		for (int k = 0; k < devList.length; k++) {
-			int instanceID = devList[randomGen.nextInt(devList.length)];
-			updateUnlabeled(instanceID, stepSize);
-		}
-		
 		for (int iteration = 0; iteration < maxNumIterations; iteration ++) {
 			for (int k = 0; k < workList.length; k++) {
+				//int instanceID = trainList[randomGen.nextInt(trainList.length)];
 				int instanceID = workList[randomGen.nextInt(workList.length)];
 				if (isLabeled[instanceID]) {
 					updateLabeled(instanceID, stepSize);
 				} else {
 					updateUnlabeled(instanceID, stepSize);
 				}
+				/*
+				objective -= 0.5 * totalSemiSupervisedPenalty;
+				computeTotalSemiSupervisedPenalty();
+				objective += 0.5 * totalSemiSupervisedPenalty;
+				*/
 			}
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
@@ -128,6 +127,7 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tSSL::\t" + totalSemiSupervisedPenalty);
+			
 			if (iteration % 5 == 4) {
 				validate(trainList);
 				validate(devList);
@@ -141,7 +141,7 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 			}
 			if (Math.abs((prevObjective - objective) / prevObjective) <
 					stoppingCriterion) {
-				break;
+			//	break;
 			}
 			prevObjective = objective;
 		}
@@ -150,12 +150,6 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 		validate(devList);
 		computeAccuracy(devList);
 		computePrimalObjective();
-	}
-	
-	private void updatePrimalParameters() {
-		for (int i = 0; i < numFeatures; i++) {
-			parameters[i] = empiricalCounts[i] - labeledCounts[i];
-		}
 	}
 	
 	private void updateLabeled(int instanceID, double stepSize) {
@@ -167,6 +161,7 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 		computeGradient(instanceID, tNodeGradient, tEdgeGradient);
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
 				null, tMarginals);
+		updateSoftCounts(instanceID, tMarginals, -1);
 		
 		objective += entropy[instanceID];
 		objective -= 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
@@ -174,7 +169,7 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 		
 		updateParameters(instanceID, tNodeGradient, tEdgeGradient, stepSize);
 		updateEntropy(instanceID, tMarginals);
-			
+		updateSoftCounts(instanceID, tMarginals, +1);
 		updatePrimalParameters();
 		computeTotalSemiSupervisedPenalty();
 		
@@ -188,15 +183,14 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 		double[][] tEdgeGradient = new double[numStates][numStates],
 					tNodeGradient = new double[length][numTargetStates];
 	
-		totalSemiSupervisedPenalty -= ssNorm[instanceID];
-		objective -= 0.5 * ssNorm[instanceID];
-		updateSemiSupervisedCounts(instanceID, -1);
+		double oldSSNorm = updateSemiSupervisedCounts(instanceID, -1);
 		
 		computeGradient(instanceID, tNodeGradient, tEdgeGradient);
 		updateParameters(instanceID, tNodeGradient, tEdgeGradient, stepSize);
 		
 		ssNorm[instanceID] = updateSemiSupervisedCounts(instanceID, +1);
-		objective += 0.5 * ssNorm[instanceID];
+		totalSemiSupervisedPenalty += ssNorm[instanceID] - oldSSNorm;
+		objective += 0.5 * (ssNorm[instanceID] - oldSSNorm);
 	}
 	
 	private void updateEntropy(int instanceID, double[][][] edgeMarginals) {
@@ -204,6 +198,12 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 				edgeScores[instanceID], null, edgeMarginals);
 		entropy[instanceID] = model.computeEntropy(nodeScores[instanceID],
 				edgeScores[instanceID], edgeMarginals, logNorm[instanceID]);
+	}
+	
+	private void updatePrimalParameters() {
+		for (int i = 0; i < numFeatures; i++) {
+			parameters[i] = empiricalCounts[i] - labeledCounts[i];
+		}
 	}
 	
 	private void updateSoftCounts(int instanceID, double[][][] edgeMarginals,
@@ -280,17 +280,16 @@ public class SemiSupervisedExponentiatedGradientDescent2 {
 			for (int i = 0; i < numStates; i++) {
 				for (int j = 0; j < numStates; j++) {
 					edgeGradient[i][j] = edgeScores[instanceID][i][j] -
-						lambda1 * features.computeEdgeScore(i, j, parameters) +
-						lambda1 * features.computeEdgeScore(i, j, ssCounts);
+						lambda1 * features.computeEdgeScore(i, j, parameters)
+					+ lambda1 * features.computeEdgeScore(i, j, ssCounts);
 				}
 			}
 			for (int i = 0; i < length; i++) {
 				for (int j = 0; j < numTargetStates; j++) {
 					nodeGradient[i][j] = nodeScores[instanceID][i][j] -
 						lambda1 * features.computeNodeScore(instanceID, i, j,
-								parameters) +
-						lambda1 * features.computeNodeScore(instanceID, i, j,
-								ssCounts);
+								parameters)
+					+ lambda1 * features.computeNodeScore(instanceID, i, j, ssCounts);
 				}
 			}
 		} else {
