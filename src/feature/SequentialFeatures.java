@@ -1,6 +1,9 @@
 package feature;
 
+import data.CountDictionary;
+
 public class SequentialFeatures {
+	protected CountDictionary nodeFeatureDict, edgeFeatureDict, stateDict;
 	protected SparseVector[][] nodeFeatures; // instances x  postions  
 	protected SparseVector[][] edgeFeatures; // states x states
 	public final int numStates, numTargetStates, numInstances, numNodeFeatures,
@@ -8,7 +11,9 @@ public class SequentialFeatures {
 	
 	public SequentialFeatures(SparseVector[][] nodeFeatures,
 			SparseVector[][] edgeFeatures,
-			int numNodeFeatures, int numEdgeFeatures) {
+			int numNodeFeatures, int numEdgeFeatures,
+			CountDictionary nodeFeatureDict, CountDictionary edgeFeatureDict,
+			CountDictionary stateDict) {
 		this.nodeFeatures = nodeFeatures;
 		this.edgeFeatures = edgeFeatures;
 		this.numInstances = nodeFeatures.length;
@@ -20,12 +25,27 @@ public class SequentialFeatures {
 		this.numEdgeFeatures = numEdgeFeatures;
 		this.numAllFeatures = numEdgeFeatures + numNodeFeatures *
 				numTargetStates;
+		this.nodeFeatureDict = nodeFeatureDict;
+		this.edgeFeatureDict = edgeFeatureDict;
+		this.stateDict = stateDict;
 		System.out.println("states:\t" + this.numStates);
 		System.out.println("features:\t" + this.numAllFeatures);
 	}
 	
 	public int getInstanceLength(int instanceID) {
 		return nodeFeatures[instanceID].length;
+	}
+
+	public String getFeatureName(int featureID) {
+		if (featureID < numEdgeFeatures) {
+			return edgeFeatureDict.getString(featureID);
+		} else {
+			int featID = (featureID - numEdgeFeatures) % numNodeFeatures;
+			int stateID = (featureID - numEdgeFeatures - featID) /
+					numNodeFeatures;
+			return nodeFeatureDict.getString(featID) + " + " +
+					stateDict.getString(stateID); 
+		}
 	}
 	
 	public void computeNodeScores(int instanceID, double[][] nodeScores,

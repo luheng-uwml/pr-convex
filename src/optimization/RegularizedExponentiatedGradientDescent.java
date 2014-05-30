@@ -17,11 +17,10 @@ public class RegularizedExponentiatedGradientDescent {
 	int[] trainList, devList, workList;
 	boolean[] isLabeled;
 	double[] parameters, empiricalCounts, labeledCounts, unlabeledCounts,
-				ssCounts, ssNorm, logNorm, entropy, trainRatio;
+			 logNorm, entropy, trainRatio;
 	double[][] nodeCounts; // states x nodes
 	double[][][] edgeScores, nodeScores; // scores for each instance
-	double lambda1, lambda2, objective, initialStepSize, totalGraphPenalty,
-		   totalSemiSupervisedPenalty;
+	double lambda1, lambda2, objective, initialStepSize, totalGraphPenalty;
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
@@ -53,16 +52,14 @@ public class RegularizedExponentiatedGradientDescent {
 		numTargetStates = features.numTargetStates;
 		model= new SequentialInference(1000, numStates);
 		parameters = new double[numFeatures];
-		//parametersGrad = new double[numFeatures];
 		empiricalCounts = new double[numFeatures];
 		labeledCounts = new double[numFeatures];
 		unlabeledCounts = new double[numFeatures];
-		ssCounts = new double[numFeatures];
+		trainRatio = new double[numFeatures];
 		nodeCounts = new double[numTargetStates][graph.numNodes];
 		edgeScores = new double[numInstances][numStates][numStates];
 		nodeScores = new double[numInstances][][];
 		logNorm = new double[numInstances];
-		ssNorm = new double[numInstances];
 		entropy = new double[numInstances];
 
 		workList = new int[trainList.length + devList.length];
@@ -85,18 +82,15 @@ public class RegularizedExponentiatedGradientDescent {
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
 		ArrayHelper.deepFill(labeledCounts, 0.0);
 		ArrayHelper.deepFill(unlabeledCounts, 0.0);
-		ArrayHelper.deepFill(ssCounts, 0.0);
 		ArrayHelper.deepFill(nodeCounts, 0.0);
 		ArrayHelper.deepFill(edgeScores, 0.0);
 		ArrayHelper.deepFill(entropy, 0.0);
 		ArrayHelper.deepFill(logNorm, 0.0);
-		ArrayHelper.deepFill(ssNorm, 0.0);
-		//initializeTrainRatio();
+		initializeTrainRatio();
 		initializeObjective();
 	}
 	
 	private void initializeTrainRatio() {
-		//trainRatio = new double[numFeatures];
 		int[] trainFeatureCounts = new int[numFeatures];
 		int[] devFeatureCounts = new int[numFeatures];
 		Arrays.fill(trainFeatureCounts, 0);
@@ -141,19 +135,16 @@ public class RegularizedExponentiatedGradientDescent {
 					new double[length + 1][numStates][numStates];
 			updateEntropy(instanceID, edgeMarginals);
 			updateSoftCounts(instanceID, edgeMarginals, 1.0);
-			if (isLabeled[instanceID]) {
-				objective -= entropy[instanceID];
-			} else {
+			objective -= entropy[instanceID];
+			if (!isLabeled[instanceID]) {
 				// update graph node counts
 				OptimizationHelper.computeSoftCounts(graph, instanceID,
 						edgeMarginals, nodeCounts, 1.0);
 			}
 		}
 		updatePrimalParameters();
-		computeTotalSemiSupervisedPenalty();
 		totalGraphPenalty = graph.computeTotalPenalty(nodeCounts);
 		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-		objective += 0.5 * totalSemiSupervisedPenalty;
 		objective += 0.25 * lambda2 * totalGraphPenalty;
 		System.out.println("initial objective::\t" + objective);
 	}
@@ -198,13 +189,13 @@ public class RegularizedExponentiatedGradientDescent {
 	
 	private void updatePrimalParameters() {
 		for (int i = 0; i < numFeatures; i++) {
-			/*
 			if (trainRatio[i] > 0) {
 				//parameters[i] = trainRatio[i] * empiricalCounts[i] - 
 				//				(labeledCounts[i] + unlabeledCounts[i]);
-				//parametersGrad[i] = parameters[i];
-			}*/
-			parameters[i] = empiricalCounts[i] - labeledCounts[i];
+				parameters[i] = empiricalCounts[i] - labeledCounts[i];
+			} else {
+				parameters[i] = 0.0;
+			}
 		}
 	}
 	
@@ -218,40 +209,24 @@ public class RegularizedExponentiatedGradientDescent {
 		model.computeMarginals(nodeScores[instanceID], edgeScores[instanceID],
 				null, tMarginals);
 		
-		if (isLabeled[instanceID]) {
-			objective += entropy[instanceID];
-			objective -= 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-		} else {
-			// ssl objective
-			totalSemiSupervisedPenalty -= ssNorm[instanceID];
-			objective -= 0.5 * ssNorm[instanceID];
-			updateSemiSupervisedCounts(instanceID, -1);
-			// graph objective
-			tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
-			totalGraphPenalty -= tPenalty;
-			objective -= 0.25 * lambda2 * tPenalty;
-		} 
+		objective += entropy[instanceID];
+		objective -= 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
+		
+		tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
+		totalGraphPenalty -= tPenalty;
+		objective -= 0.25 * lambda2 * tPenalty;
 		
 		updateSoftCounts(instanceID, tMarginals, -1);
 		updateParameters(instanceID, tNodeGradient, tEdgeGradient, stepSize);
 		updateEntropy(instanceID, tMarginals);
-		
 		updateSoftCounts(instanceID, tMarginals, +1);
-		if (isLabeled[instanceID]) {
-			objective -= 0.5 * totalSemiSupervisedPenalty;
-			updatePrimalParameters();
-			computeTotalSemiSupervisedPenalty();
-			objective += 0.5 * totalSemiSupervisedPenalty;
-			// entropy and theta term
-			objective -= entropy[instanceID];
-			objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-		} else {
-			ssNorm[instanceID] = updateSemiSupervisedCounts(instanceID, +1);
-			objective += 0.5 * ssNorm[instanceID];
-			tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
-			totalGraphPenalty += tPenalty;
-			objective += 0.25 * lambda2 * tPenalty;
-		}
+		updatePrimalParameters();
+		
+		objective -= entropy[instanceID];
+		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
+		tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
+		totalGraphPenalty += tPenalty;
+		objective += 0.25 * lambda2 * tPenalty;
 	}
 	
 	private void updateEntropy(int instanceID, double[][][] edgeMarginals) {
@@ -271,44 +246,6 @@ public class RegularizedExponentiatedGradientDescent {
 					edgeMarginals, unlabeledCounts, weight);
 			OptimizationHelper.computeSoftCounts(graph, instanceID,
 					edgeMarginals, nodeCounts, weight);
-		}
-	}
-	
-	private double updateSemiSupervisedCounts(int instanceID, double weight) {
-		int length = features.getInstanceLength(instanceID);
-		double penalty = 0;
-		for (int i = 0; i < numStates; i++) {
-			for (int j = 0; j < numStates; j++) {
-				if (i == features.S0 || j == features.SN) {
-					continue;
-				}
-				double diff = edgeScores[instanceID][i][j] -
-					lambda1 * features.computeEdgeScore(i, j, parameters);
-				features.addEdgeToCounts(instanceID, i, j, ssCounts,
-						weight * diff);
-				penalty += diff * diff;
-			}
-		}
-		for (int i = 0; i < length; i++) {
-			for (int j = 0; j < numTargetStates; j++) {
-				double diff = nodeScores[instanceID][i][j] -
-					lambda1 * features.computeNodeScore(instanceID, i, j,
-							parameters);
-				features.addNodeToCounts(instanceID, i, j, ssCounts,
-						weight * diff);
-				penalty += diff * diff;
-			}
-		}
-		return penalty;
-	}
-	
-	private void computeTotalSemiSupervisedPenalty() {
-		Arrays.fill(ssCounts, 0.0);
-		totalSemiSupervisedPenalty = 0.0;
-		for (int instanceID : devList) {
-			ssNorm[instanceID] = updateSemiSupervisedCounts(instanceID, +1);
-			totalSemiSupervisedPenalty += ssNorm[instanceID] *
-					ssNorm[instanceID];
 		}
 	}
 	
@@ -342,17 +279,14 @@ public class RegularizedExponentiatedGradientDescent {
 			for (int i = 0; i < numStates; i++) {
 				for (int j = 0; j < numStates; j++) {
 					edgeGradient[i][j] = edgeScores[instanceID][i][j] -
-						lambda1 * features.computeEdgeScore(i, j, parameters) +
-						lambda1 * features.computeEdgeScore(i, j, ssCounts);
+						lambda1 * features.computeEdgeScore(i, j, parameters);
 				}
 			}
 			for (int i = 0; i < length; i++) {
 				for (int j = 0; j < numTargetStates; j++) {
 					nodeGradient[i][j] = nodeScores[instanceID][i][j] -
 						lambda1 * features.computeNodeScore(instanceID, i, j,
-								parameters) +
-						lambda1 * features.computeNodeScore(instanceID, i, j,
-								ssCounts);
+								parameters);
 				}
 			}
 		} else {
@@ -415,14 +349,18 @@ public class RegularizedExponentiatedGradientDescent {
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
 		
-		/* see discrpency between unlabeled counts and gold
+		//see discrpency between unlabeled counts and gold
 		double[] diff = new double[numFeatures];
-		for (int i = 0; i < features.numEdgeFeatures; i++) {
+		for (int i = 0; i < numFeatures; i++) {
 			diff[i] = empiricalCounts[i] * trainRatio[i] -
 					(labeledCounts[i] + unlabeledCounts[i]);
+			//System.out.println(i + "\t" + diff[i]);
+			if (diff[i] * diff[i] > 1) {
+				System.out.println(i + "\t" + diff + "\t" +
+						features.getFeatureName(i));
+			}
 		}
 		System.out.println("diff::\t" + ArrayHelper.l2NormSquared(diff));
-		*/
 	}
 	
 

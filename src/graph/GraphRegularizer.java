@@ -3,7 +3,6 @@ package graph;
 import java.util.Arrays;
 
 import data.CountDictionary;
-import data.NERCorpus;
 import optimization.ArrayHelper;
 import feature.SparseVector;
 import gnu.trove.set.hash.TIntHashSet;

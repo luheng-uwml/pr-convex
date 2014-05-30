@@ -59,7 +59,7 @@ public class RegularizedNERExperiment {
 						   "\tnum all::\t" + numInstances);
 		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				trainInstances, 1);
+				trainInstances, 50);
 		extractor.printInfo();
 		/*
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
@@ -68,7 +68,7 @@ public class RegularizedNERExperiment {
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
 				ngramExtractor.ngramFeatures, 20, true, 0.3, 8);
 		graphConstructor.run();
-		*/
+	*/
 		SequentialFeatures features = extractor.
 				getSequentialFeatures(allInstances);
 		Evaluator eval = new Evaluator(corpusTrain);

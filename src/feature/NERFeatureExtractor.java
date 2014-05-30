@@ -66,7 +66,8 @@ public class NERFeatureExtractor {
 			}
 		}
 		return new SequentialFeatures(nodeFeatures, edgeFeatures,
-				numNodeFeatures, numEdgeFeatures);
+				numNodeFeatures, numEdgeFeatures, nodeFeatureDict,
+				edgeFeatureDict, stateDict);
 	}
 	
 	private SparseVector addEdgeFeatures(String state, String prevState) {
