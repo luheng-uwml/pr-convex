@@ -6,7 +6,6 @@ import java.util.Random;
 import inference.SequentialInference;
 import data.Evaluator;
 import feature.SequentialFeatures;
-import graph.GraphRegularizer;
 
 public class SemiSupervisedExponentiatedGradientDescent {
 	SequentialFeatures features;

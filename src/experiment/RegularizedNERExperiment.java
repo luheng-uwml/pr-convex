@@ -28,7 +28,7 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numLabeled = 1000, numTrains = 1000;
+		int numLabeled = 5000, numTrains = 5000;
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -59,16 +59,16 @@ public class RegularizedNERExperiment {
 						   "\tnum all::\t" + numInstances);
 		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				trainInstances, 10);
+				trainInstances, 1);
 		extractor.printInfo();
 		
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
-				corpusTrain, allInstances);
+				corpusTrain, trainInstances);
 		ngramExtractor.printInfo();
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.ngramFeatures, 20, true, 0.2, 8);
+				ngramExtractor.ngramFeatures, 10, true, 0.3, 8);
 		graphConstructor.run();
-	
+		
 		SequentialFeatures features = extractor.
 				getSequentialFeatures(allInstances);
 		Evaluator eval = new Evaluator(corpusTrain);
@@ -80,11 +80,11 @@ public class RegularizedNERExperiment {
 		double goldPenalty = graph.computeTotalPenalty(labels);
 		System.out.println("gold penalty::\t" + goldPenalty);
 		
-		//graph.validate(labels, corpusTrain.nerDict, ngramExtractor.ngramDict);
+		graph.validate(labels, corpusTrain.nerDict, ngramExtractor.ngramDict);
 		
 		// here lambda = 1 / C
-		RegularizedExponentiatedGradientDescent optimizer =
-				new RegularizedExponentiatedGradientDescent(features, graph,
+		RegularizedExponentiatedGradientDescent3 optimizer =
+				new RegularizedExponentiatedGradientDescent3(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
 						1, 1, 0.5, 200, 12345);
 		

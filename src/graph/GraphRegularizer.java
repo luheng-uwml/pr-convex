@@ -127,6 +127,9 @@ public class GraphRegularizer {
 		double[][] counts = new double[numTargetStates][numNodes];
 		ArrayHelper.deepFill(counts, 0.0);
 		for (int i = 0; i < labels.length; i++) {
+			if (i >= nodes.length) {
+				continue;
+			}
 			for (int j = 0; j < labels[i].length; j++) {
 				int nodeID = nodes[i][j];
 				int stateID = labels[i][j];
@@ -147,6 +150,9 @@ public class GraphRegularizer {
 		ArrayHelper.deepFill(counts, 0.0);
 		ArrayHelper.deepFill(purity, 0.0);
 		for (int i = 0; i < labels.length; i++) {
+			if (i >= nodes.length) {
+				continue;
+			}
 			for (int j = 0; j < labels[i].length; j++) {
 				int nodeID = nodes[i][j];
 				int stateID = labels[i][j];
