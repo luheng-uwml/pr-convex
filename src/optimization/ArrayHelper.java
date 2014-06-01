@@ -174,6 +174,9 @@ public class ArrayHelper {
 
 	public static void normalize(double[] arr) {
 		double norm = Math.sqrt(l2NormSquared(arr));
+		if (norm == 0) {
+			return;
+		}
 		for (int i = 0; i < arr.length; i++) {
 			arr[i] /= norm;
 		}
