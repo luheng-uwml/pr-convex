@@ -41,16 +41,18 @@ public class DataPreparation {
 		for (int i = 0; i < corpusTrain.tokenDict.size(); i++) {
 			allWords.addString(corpusTrain.tokenDict.getString(i).toLowerCase());
 		}
+		/*
 		for (int i = 0; i < ngramExtractor.ngramDict.size(); i++) {
 			String[] words = ngramExtractor.ngramDict.getString(i).split(" ");
 			String bigram = words[0] + "_" + words[1];
 			allWords.addString(bigram);
 			allWords.addString(bigram.toLowerCase());
 		}
+		*/
 		System.out.println("Everything:\t" + allWords.size());
 		
 		try {
-			IOHelper.saveCountDictionary(allWords, "./data/all_words.txt");
+			IOHelper.saveCountDictionary(allWords, "./data/all_unigrams.txt");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

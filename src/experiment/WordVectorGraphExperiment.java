@@ -2,16 +2,20 @@ package experiment;
 
 import java.util.ArrayList;
 
-import optimization.*;
+import optimization.RegularizedExponentiatedGradientDescent3;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
-import feature.*;
-import graph.*;
-
+import data.WordEmbeddingDictionary;
+import feature.NERFeatureExtractor;
+import feature.NGramFeatureExtractor;
+import feature.SequentialFeatures;
 import gnu.trove.list.array.TIntArrayList;
+import graph.GraphRegularizer;
+import graph.KNNGraphConstructor;
+import graph.WordVectorGraphConstructor;
 
-public class RegularizedNERExperiment {
+public class WordVectorGraphExperiment {
 	
 	public static void main(String[] args) {
 		NERCorpus corpusTrain = new NERCorpus();
@@ -21,6 +25,9 @@ public class RegularizedNERExperiment {
 		corpusDev.readFromCoNLL2003("./data/eng.testa");
 		corpusTrain.printCorpusInfo();
 		corpusDev.printCorpusInfo();
+		
+		WordEmbeddingDictionary wvecDict = new WordEmbeddingDictionary(
+				"./data/all_unigrams.vec");
 		
 		int numAllTokens = 0;
 		for (NERSequence instance : corpusTrain.instances) {
@@ -61,32 +68,36 @@ public class RegularizedNERExperiment {
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				trainInstances, 1);
 		extractor.printInfo();
-		
-		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
-				corpusTrain, trainInstances);
-		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.getNGramFeatures(), 10, true, 0.3, 8);
-		graphConstructor.run();
-		
 		SequentialFeatures features = extractor.
 				getSequentialFeatures(allInstances);
-		Evaluator eval = new Evaluator(corpusTrain);
+		
+		// construct graph ..
+		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
+				corpusTrain, trainInstances);
+	
+		// compute normalized embedding for each ngram
+		double[][] wvecs = ngramExtractor.getWordEmbeddingFeatures(wvecDict);
+		WordVectorGraphConstructor graphConstructor =
+				new WordVectorGraphConstructor(wvecs, 10, true, 0.3, 8);
+		graphConstructor.run();
+		
 		GraphRegularizer graph =
 				new GraphRegularizer(ngramExtractor.getNGramIDs(),
 					graphConstructor.getEdgeList(), features.numTargetStates);
-				//new DummyGraphRegularizer(features.numTargetStates);
-		
+				
 		double goldPenalty = graph.computeTotalPenalty(labels);
 		System.out.println("gold penalty::\t" + goldPenalty);
 		
 		graph.validate(labels, corpusTrain.nerDict, ngramExtractor.ngramDict);
-		
+		/*
 		// here lambda = 1 / C
+		Evaluator eval = new Evaluator(corpusTrain);
 		RegularizedExponentiatedGradientDescent3 optimizer =
 				new RegularizedExponentiatedGradientDescent3(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
 						1, 2, 0.5, 200, 12345);
 		
 		optimizer.optimize();
+		*/
 	}
 }

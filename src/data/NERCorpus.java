@@ -5,9 +5,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import feature.NERFeatureExtractor;
-import feature.SequentialFeatures;
-
 public class NERCorpus {
 	public ArrayList<NERSequence> instances;
 	public CountDictionary tokenDict, posDict, chunkDict, nerDict;

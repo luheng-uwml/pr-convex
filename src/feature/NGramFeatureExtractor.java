@@ -5,17 +5,21 @@ import java.util.ArrayList;
 import data.CountDictionary;
 import data.NERCorpus;
 import data.NERSequence;
+import data.WordEmbeddingDictionary;
 
 public class NGramFeatureExtractor {
 	NERCorpus corpus;
+	ArrayList<NERSequence> instances;
 	public CountDictionary ngramDict;
 	CountDictionary ngramFeatureDict;
-	public int[][] ngramIDs; // sentence_id x position 
-	public SparseVector[] ngramFeatures;  
+	private int[][] ngramIDs; // sentence_id x position 
+	private SparseVector[] ngramFeatures;
+	private double[][] denseFeatures;
 	int ngramSize, numNGrams;
 	boolean toLowerCase;
 	int[][] featureTemplate = { {-1, 0, 1}, {-2, -1, 0}, {0, 1, 2}, {-2, 0, 2},
 			{-1, 1}, {-2, 2}, {-2, -1}, {1, 2}, {-2}, {-1}, {0}, {1}, {2}};
+	double[][] denseFeatureTemplate = { {0, 0.1}, {1, 0.8}, {2, 0.1} };
 	
 	public NGramFeatureExtractor(NERCorpus corpus,
 			ArrayList<NERSequence> instances) {
@@ -28,12 +32,51 @@ public class NGramFeatureExtractor {
 		this.corpus = corpus;
 		this.ngramSize = ngramSize;
 		this.toLowerCase = toLowerCase;
-		extractNGrams(instances);
-		computeNGramFeatures(instances);
-		normalizeNGramFeatures();
+		this.instances = instances;
+		this.ngramIDs = null;
+		this.ngramFeatures = null;
+		this.denseFeatures = null;
 	}
 	
-	public void extractNGrams(ArrayList<NERSequence> instances) {
+	public int[][] getNGramIDs() {
+		if (ngramIDs == null) {
+			extractNGrams(instances);
+		}
+		return ngramIDs;
+	}
+	
+	public SparseVector[] getNGramFeatures() {
+		if (ngramIDs == null) {
+			extractNGrams(instances);
+		}
+		if (ngramFeatures == null) {
+			computeNGramFeatures(instances);
+			normalizeNGramFeatures();
+		}
+		return ngramFeatures;
+	}
+	
+	public double[][] getWordEmbeddingFeatures(
+			WordEmbeddingDictionary word2vec) {
+		if (ngramIDs == null) {
+			extractNGrams(instances);
+		}
+		int vectorSize = word2vec.getVectorSize();
+		denseFeatures = new double[numNGrams][vectorSize];
+		// simple additive ...
+		for (int i = 0; i < numNGrams; i++) {
+			String[] words = ngramDict.getString(i).split(" ");
+			for (double[] tp : denseFeatureTemplate) {
+				double[] wvec = word2vec.getVector(words[(int)tp[0]]);
+				for (int j = 0; j < vectorSize; j++) {
+					denseFeatures[i][j] += tp[1] * wvec[j];
+				}
+			}
+		}
+		return denseFeatures;
+	}
+	
+	private void extractNGrams(ArrayList<NERSequence> instances) {
 		ngramDict = new CountDictionary();
 		ngramIDs = new int[instances.size()][];
 		int leftLen = (ngramSize / 2),

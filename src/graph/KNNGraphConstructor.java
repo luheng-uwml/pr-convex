@@ -7,19 +7,19 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
-import data.CountDictionary;
 import feature.DynamicSparseVector;
 import feature.SparseVector;
 
 public class KNNGraphConstructor {
 	SparseVector[] features;
 	EdgeList[] edges;
-	double[][] featureVals;
 	int numNodes;
 	int numNeighbors;
 	boolean mutualKNN;
 	int numThreads;
 	double similarityThreshold;
+	
+	public KNNGraphConstructor() { }
 	
 	public KNNGraphConstructor(SparseVector[] features, int numNeighbors,
 			boolean mutualKNN, double similarityThreshold, int numThreads) {
