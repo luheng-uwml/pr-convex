@@ -41,4 +41,19 @@ public class IOHelper {
 		}
 		fout.close();
 	}
+	
+	// file format:
+	// first line contains single integer: size
+	// each line contains: [id]\t[freq]\t[string]
+	public static void saveCountDictionary(CountDictionary dict,
+			String filePath) throws IOException {
+		BufferedWriter fout = new BufferedWriter(new FileWriter(filePath));
+		fout.write(dict.size() + "\n");
+		for (int i = 0; i < dict.size(); i++) {
+			int freq = dict.getCount(i);
+			String str = dict.getString(i);
+			fout.write(i + "\t" + freq + "\t" + str + "\n");
+		}
+		fout.close();
+	}
 }

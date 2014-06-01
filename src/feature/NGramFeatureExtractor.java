@@ -13,18 +13,21 @@ public class NGramFeatureExtractor {
 	public int[][] ngramIDs; // sentence_id x position 
 	public SparseVector[] ngramFeatures;  
 	int ngramSize, numNGrams;
+	boolean toLowerCase;
 	int[][] featureTemplate = { {-1, 0, 1}, {-2, -1, 0}, {0, 1, 2}, {-2, 0, 2},
 			{-1, 1}, {-2, 2}, {-2, -1}, {1, 2}, {-2}, {-1}, {0}, {1}, {2}};
 	
 	public NGramFeatureExtractor(NERCorpus corpus,
 			ArrayList<NERSequence> instances) {
-		this(corpus, instances, 3);
+		this(corpus, instances, 3, true);
 	}
 	
 	public NGramFeatureExtractor(NERCorpus corpus,
-			ArrayList<NERSequence> instances, int ngramSize) {
+			ArrayList<NERSequence> instances, int ngramSize,
+			boolean toLowerCase) {
 		this.corpus = corpus;
 		this.ngramSize = ngramSize;
+		this.toLowerCase = toLowerCase;
 		extractNGrams(instances);
 		computeNGramFeatures(instances);
 		normalizeNGramFeatures();
@@ -41,10 +44,14 @@ public class NGramFeatureExtractor {
 			for (int i = 0; i < instance.length; i++) {
 				String ngram = "";
 				for (int j = i - leftLen; j < i + rightLen; j++) {
-					if (j < 0 || j >= instance.length) {
-						ngram += "[-]";
-					} else {
+					if (j < 0) {
+						ngram += "<s>";
+					} else if (j >= instance.length) {
+						ngram += "</s>";
+					} else if (toLowerCase) {
 						ngram += instance.getToken(j).toLowerCase(); 
+					} else {
+						ngram += instance.getToken(j);
 					}
 					if (j + 1 < i + rightLen) {
 						ngram += " ";
@@ -74,10 +81,14 @@ public class NGramFeatureExtractor {
 						   chunkTags = "C" + j + "="; 
 					for (int k : featureTemplate[j]) {
 						int p = i + k;
-						if (p < 0 || p >= instance.length) {
-							tokens += " [-]";
-							posTags += " [-]";
-							chunkTags += " [-]";
+						if (p < 0) { 
+							tokens += " <s>";
+							posTags += " <s>";
+							chunkTags += " <s>";
+						} else if(p >= instance.length) {
+							tokens += " </s>";
+							posTags += " </s>";
+							chunkTags += " </s>";
 						} else {
 							tokens += " " + instance.getToken(p);
 							posTags += " " + instance.getPosTag(p);

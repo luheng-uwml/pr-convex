@@ -6,12 +6,7 @@ package data;
  *
  */
 public class Word2VecDictionary {
-	public Word2VecDictionary(String filePath, CountDictionary unigrams) {
-		
-	}
+	long words, size;
 	
-	public Word2VecDictionary(String filePath, CountDictionary unigrams,
-							  CountDictionary bigrams) {
-		
-	}
+	
 }
