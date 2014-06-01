@@ -1,5 +1,7 @@
 package graph;
 
+import graph.KNNGraphConstructor.EdgeBuilderThread;
+
 public class WordVectorGraphConstructor extends KNNGraphConstructor {
 	double[][] features;
 	
@@ -14,6 +16,30 @@ public class WordVectorGraphConstructor extends KNNGraphConstructor {
 		this.numThreads = numThreads;
 	}
 	
+	public void run() {
+		System.out.println(String.format("Starting to build graph with " +
+				"%d nodes, and %d neighbors with %s KNN method. ",
+				numNodes, numNeighbors, (mutualKNN ? "mutual" : "symmetric")));
+		edges = new EdgeList[numNodes];
+		for(int i = 0; i < numNodes; i++) {
+			edges[i] = new EdgeList(numNeighbors);
+		}
+		int batchSize = numNodes / numThreads;
+		EdgeBuilderThread[] threads = new DenseEdgeBuilderThread[numThreads];
+		for (int i = 0; i < numThreads; i++) {
+			int start = i * batchSize;
+			int end = (i == numThreads - 1 ? numNodes : start + batchSize);
+			threads[i] = new DenseEdgeBuilderThread(i, start, end);
+			threads[i].start();
+		}
+		for (int i = 0; i < numThreads; i++) {
+			try {
+				threads[i].join();
+			} catch (InterruptedException e) { }
+		}
+		symmetrifyGraph();
+	}
+	
 	protected static double dotProduct(double[] x, double[] y) {
 		double result = 0;
 		for (int i = 0; i < x.length; i++) {
@@ -22,17 +48,11 @@ public class WordVectorGraphConstructor extends KNNGraphConstructor {
 		return result;
 	}
 	
-	protected class EdgeBuilderThread extends Thread {
-		int start, end, id;
-		boolean finished;
-
-		EdgeBuilderThread(int id, int start, int end) {
-			this.id = id;
-			this.start = start;
-			this.end = end;
-			this.finished = false;
-			print("Thread " + id + " processing nodes " + start + " to "
-					+ end + "\n");
+	protected class DenseEdgeBuilderThread extends
+		KNNGraphConstructor.EdgeBuilderThread {
+		
+		DenseEdgeBuilderThread(int id, int start, int end) {
+			super(id, start, end);
 		}
 
 		@Override

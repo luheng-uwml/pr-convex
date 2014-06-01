@@ -12,6 +12,7 @@ import feature.SparseVector;
 
 public class KNNGraphConstructor {
 	SparseVector[] features;
+	EdgeBuilderThread[] threads;
 	EdgeList[] edges;
 	int numNodes;
 	int numNeighbors;
@@ -114,7 +115,7 @@ public class KNNGraphConstructor {
 		}
 	}
 	
-	private void symmetrifyGraph() {
+	protected void symmetrifyGraph() {
 		for (int i = 0; i < numNodes; i++) {
 			edges[i].freeze();
 		}
