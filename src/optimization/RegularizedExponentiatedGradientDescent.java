@@ -29,7 +29,7 @@ public class RegularizedExponentiatedGradientDescent {
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
-	static final double stoppingCriterion = 1e-5;
+	static final double stoppingCriterion = 1e-6;
 	
 	public RegularizedExponentiatedGradientDescent(
 			SequentialFeatures features, GraphRegularizer graph,
@@ -107,6 +107,8 @@ public class RegularizedExponentiatedGradientDescent {
 			if (trainFeatureCounts[i] > 0) {
 				trainRatio[i] = 1.0 / trainFeatureCounts[i] *
 						(trainFeatureCounts[i] + devFeatureCounts[i]);
+				//trainRatio[i] = 1.0 / trainList.length *
+				//		(trainList.length + devList.length);
 			} else {
 				trainRatio[i] = 0.0;
 			}

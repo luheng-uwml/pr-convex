@@ -85,7 +85,7 @@ public class RegularizedNERExperiment {
 		RegularizedExponentiatedGradientDescent optimizer =
 				new RegularizedExponentiatedGradientDescent(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
-						1, 1, 0.5, 500, 12345);
+						10, 10, 0.5, 500, 12345);
 		
 		optimizer.optimize();
 	}
