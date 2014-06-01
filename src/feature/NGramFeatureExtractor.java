@@ -2,6 +2,7 @@ package feature;
 
 import java.util.ArrayList;
 
+import optimization.ArrayHelper;
 import data.CountDictionary;
 import data.NERCorpus;
 import data.NERSequence;
@@ -72,6 +73,7 @@ public class NGramFeatureExtractor {
 					denseFeatures[i][j] += tp[1] * wvec[j];
 				}
 			}
+			ArrayHelper.normalize(denseFeatures[i]);
 		}
 		return denseFeatures;
 	}

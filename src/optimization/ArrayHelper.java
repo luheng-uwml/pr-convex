@@ -171,5 +171,11 @@ public class ArrayHelper {
 		}
 		return minVal;
 	}
-	
+
+	public static void normalize(double[] arr) {
+		double norm = Math.sqrt(l2NormSquared(arr));
+		for (int i = 0; i < arr.length; i++) {
+			arr[i] /= norm;
+		}
+	}	
 }
