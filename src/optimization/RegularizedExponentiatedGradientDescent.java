@@ -8,6 +8,11 @@ import data.Evaluator;
 import feature.SequentialFeatures;
 import graph.GraphRegularizer;
 
+/**
+ * semi-supervised PR, the train-ratio version
+ * @author luheng
+ *
+ */
 public class RegularizedExponentiatedGradientDescent {
 	SequentialFeatures features;
 	SequentialInference model;
@@ -190,9 +195,9 @@ public class RegularizedExponentiatedGradientDescent {
 	private void updatePrimalParameters() {
 		for (int i = 0; i < numFeatures; i++) {
 			if (trainRatio[i] > 0) {
-				//parameters[i] = trainRatio[i] * empiricalCounts[i] - 
-				//				(labeledCounts[i] + unlabeledCounts[i]);
-				parameters[i] = empiricalCounts[i] - labeledCounts[i];
+				parameters[i] = trainRatio[i] * empiricalCounts[i] - 
+								(labeledCounts[i] + unlabeledCounts[i]);
+				//parameters[i] = empiricalCounts[i] - labeledCounts[i];
 			} else {
 				parameters[i] = 0.0;
 			}
@@ -292,15 +297,15 @@ public class RegularizedExponentiatedGradientDescent {
 		} else {
 			for (int i = 0; i < numStates; i++) {
 				for (int j = 0; j < numStates; j++) {
-					edgeGradient[i][j] = edgeScores[instanceID][i][j];// -
-						//lambda1 * features.computeEdgeScore(i, j, parameters);
+					edgeGradient[i][j] = edgeScores[instanceID][i][j] -
+						lambda1 * features.computeEdgeScore(i, j, parameters);
 				}
 			}
 			for (int i = 0; i < length; i++) {
 				for (int j = 0; j < numTargetStates; j++) {
 					nodeGradient[i][j] = nodeScores[instanceID][i][j] -
-						//lambda1 * features.computeNodeScore(instanceID, i, j,
-						//			parameters) -
+						lambda1 * features.computeNodeScore(instanceID, i, j,
+									parameters) -
 						lambda2 * graph.computePenalty(instanceID, i,
 								nodeCounts[j]);
 				}

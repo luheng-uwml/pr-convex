@@ -28,7 +28,7 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numLabeled = 5000, numTrains = 5000;
+		int numLabeled = 3000, numTrains = 3000;
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -63,9 +63,9 @@ public class RegularizedNERExperiment {
 		extractor.printInfo();
 		
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
-				corpusTrain, trainInstances);
+				corpusTrain, allInstances);
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.getNGramFeatures(), 10, true, 0.3, 8);
+				ngramExtractor.getNGramFeatures(), 5, true, 0.3, 8);
 		graphConstructor.run();
 		
 		SequentialFeatures features = extractor.
@@ -82,10 +82,10 @@ public class RegularizedNERExperiment {
 		graph.validate(labels, corpusTrain.nerDict, ngramExtractor.ngramDict);
 		
 		// here lambda = 1 / C
-		RegularizedExponentiatedGradientDescent3 optimizer =
-				new RegularizedExponentiatedGradientDescent3(features, graph,
+		RegularizedExponentiatedGradientDescent optimizer =
+				new RegularizedExponentiatedGradientDescent(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
-						1, 2, 0.5, 200, 12345);
+						1, 1, 0.5, 500, 12345);
 		
 		optimizer.optimize();
 	}

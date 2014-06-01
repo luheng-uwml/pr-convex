@@ -7,6 +7,11 @@ import data.Evaluator;
 import feature.SequentialFeatures;
 import graph.GraphRegularizer;
 
+/**
+ * Semi-supervised version, with dummy variable
+ * @author luheng
+ *
+ */
 public class RegularizedExponentiatedGradientDescent2 {
 	SequentialFeatures features;
 	SequentialInference model;
@@ -28,8 +33,8 @@ public class RegularizedExponentiatedGradientDescent2 {
 	public RegularizedExponentiatedGradientDescent2(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
-			double lambda1, double lambda2, double initialStepSize,
-			int maxNumIterations, int randomSeed) {
+			double lambda1, double lambda2, double unlabeledWeight,
+			double initialStepSize, int maxNumIterations, int randomSeed) {
 		this.features = features;
 		this.graph = graph;
 		this.labels = labels;
@@ -38,11 +43,10 @@ public class RegularizedExponentiatedGradientDescent2 {
 		this.eval = eval;
 		this.lambda1 = 1.0 / lambda1;
 		this.lambda2 = lambda2;
+		this.unlabeledWeight = unlabeledWeight;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
-		// FIXME:
-		this.unlabeledWeight = 0;
 		initializeDataStructure();
 		initializeObjective();
 	}

@@ -20,7 +20,7 @@ public class NGramFeatureExtractor {
 	boolean toLowerCase;
 	int[][] featureTemplate = { {-1, 0, 1}, {-2, -1, 0}, {0, 1, 2}, {-2, 0, 2},
 			{-1, 1}, {-2, 2}, {-2, -1}, {1, 2}, {-2}, {-1}, {0}, {1}, {2}};
-	double[][] denseFeatureTemplate = { {0, 0.1}, {1, 0.8}, {2, 0.1} };
+	//double[][] denseFeatureTemplate = { {0, 0.1}, {1, 0.8}, {2, 0.1} };
 	
 	public NGramFeatureExtractor(NERCorpus corpus,
 			ArrayList<NERSequence> instances) {
@@ -63,14 +63,15 @@ public class NGramFeatureExtractor {
 			extractNGrams(instances);
 		}
 		int vectorSize = word2vec.getVectorSize();
-		denseFeatures = new double[numNGrams][vectorSize];
+		denseFeatures = new double[numNGrams][vectorSize * ngramSize];
+		double[] weights = { 0.5, 1, 0.5 };
 		// simple additive ...
 		for (int i = 0; i < numNGrams; i++) {
 			String[] words = ngramDict.getString(i).split(" ");
-			for (double[] tp : denseFeatureTemplate) {
-				double[] wvec = word2vec.getVector(words[(int)tp[0]]);
-				for (int j = 0; j < vectorSize; j++) {
-					denseFeatures[i][j] += tp[1] * wvec[j];
+			for (int j = 0; j < ngramSize; j++) {
+				double[] wvec = word2vec.getVector(words[j]);
+				for (int k = 0; k < vectorSize; k++) {
+					denseFeatures[i][j*vectorSize+k] += weights[j] * wvec[k];
 				}
 			}
 			ArrayHelper.normalize(denseFeatures[i]);

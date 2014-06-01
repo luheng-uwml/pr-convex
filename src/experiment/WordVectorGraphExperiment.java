@@ -2,7 +2,7 @@ package experiment;
 
 import java.util.ArrayList;
 
-import optimization.RegularizedExponentiatedGradientDescent3;
+import optimization.SupervisedExponentiatedGradientDescent3;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
@@ -35,7 +35,7 @@ public class WordVectorGraphExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numLabeled = 5000, numTrains = 5000;
+		int numLabeled = 1000, numTrains = 1000;
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -78,7 +78,7 @@ public class WordVectorGraphExperiment {
 		// compute normalized embedding for each ngram
 		double[][] wvecs = ngramExtractor.getWordEmbeddingFeatures(wvecDict);
 		WordVectorGraphConstructor graphConstructor =
-				new WordVectorGraphConstructor(wvecs, 10, true, 0.3, 8);
+				new WordVectorGraphConstructor(wvecs, 5, true, 0.3, 8);
 		graphConstructor.run();
 		
 		GraphRegularizer graph =
@@ -89,15 +89,14 @@ public class WordVectorGraphExperiment {
 		System.out.println("gold penalty::\t" + goldPenalty);
 		
 		graph.validate(labels, corpusTrain.nerDict, ngramExtractor.ngramDict);
-		/*
+		
 		// here lambda = 1 / C
 		Evaluator eval = new Evaluator(corpusTrain);
-		RegularizedExponentiatedGradientDescent3 optimizer =
-				new RegularizedExponentiatedGradientDescent3(features, graph,
+		SupervisedExponentiatedGradientDescent3 optimizer =
+				new SupervisedExponentiatedGradientDescent3(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
-						1, 2, 0.5, 200, 12345);
+						1, 0.5, 0.5, 500, 12345);
 		
 		optimizer.optimize();
-		*/
 	}
 }

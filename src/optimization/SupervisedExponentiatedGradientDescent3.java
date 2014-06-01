@@ -7,7 +7,12 @@ import data.Evaluator;
 import feature.SequentialFeatures;
 import graph.GraphRegularizer;
 
-public class RegularizedExponentiatedGradientDescent3 {
+/**
+ * fully supervised version, with graph regularizer
+ * @author luheng
+ *
+ */
+public class SupervisedExponentiatedGradientDescent3 {
 	SequentialFeatures features;
 	SequentialInference model;
 	GraphRegularizer graph;
@@ -23,7 +28,7 @@ public class RegularizedExponentiatedGradientDescent3 {
 	Random randomGen;
 	static final double stoppingCriterion = 1e-5;
 	
-	public RegularizedExponentiatedGradientDescent3(
+	public SupervisedExponentiatedGradientDescent3(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double initialStepSize,
