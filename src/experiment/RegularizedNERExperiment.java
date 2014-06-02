@@ -29,8 +29,7 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		//int numLabeled = corpusTrain.size(), numTrains = numLabeled;
-		int numLabeled = 1000, numTrains = numLabeled;
+		int numTrains = numLabeled > 0 ? numLabeled : corpusTrain.size();
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -42,12 +41,8 @@ public class RegularizedNERExperiment {
 			int instanceID = allInstances.size();
 			allInstances.add(corpusTrain.instances.get(i));
 			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
-			if (instanceID < numLabeled) {
-				trainInstances.add(corpusTrain.instances.get(i));
-				trainList.add(instanceID);
-			} else {
-				devList.add(instanceID);
-			}
+			trainInstances.add(corpusTrain.instances.get(i));
+			trainList.add(instanceID);
 		}
 		// add from original DEV corpus
 		for (int i = 0; i < Math.min(numInstances - numTrains,
@@ -61,7 +56,7 @@ public class RegularizedNERExperiment {
 						   "\tnum all::\t" + numInstances);
 		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				trainInstances, 1);
+				trainInstances, featureFreqCutOff);
 		extractor.printInfo();
 		
 		SequentialFeatures features = extractor.
@@ -80,7 +75,7 @@ public class RegularizedNERExperiment {
 		
 		optimizer.optimize();
 		try {
-			IOHelper.saveOptimizationHistory(optimizer.history, "./experiments/temp.mat");
+			IOHelper.saveOptimizationHistory(optimizer.history, logFilePath);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -101,7 +96,7 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numLabeled = 1000, numTrains = numLabeled;
+		int numTrains = numLabeled > 0 ? numLabeled : corpusTrain.size();
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -113,12 +108,8 @@ public class RegularizedNERExperiment {
 			int instanceID = allInstances.size();
 			allInstances.add(corpusTrain.instances.get(i));
 			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
-			if (instanceID < numLabeled) {
-				trainInstances.add(corpusTrain.instances.get(i));
-				trainList.add(instanceID);
-			} else {
-				devList.add(instanceID);
-			}
+			trainInstances.add(corpusTrain.instances.get(i));
+			trainList.add(instanceID);
 		}
 		// add from original DEV corpus
 		for (int i = 0; i < Math.min(numInstances - numTrains,
@@ -132,7 +123,7 @@ public class RegularizedNERExperiment {
 						   "\tnum all::\t" + numInstances);
 		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				trainInstances, 1);
+				trainInstances, featureFreqCutOff);
 		extractor.printInfo();
 		
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
@@ -162,13 +153,16 @@ public class RegularizedNERExperiment {
 		
 		optimizer.optimize();
 		try {
-			IOHelper.saveOptimizationHistory(optimizer.history, "./experiments/temp.mat");
+			IOHelper.saveOptimizationHistory(optimizer.history, logFilePath);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	private static int numLabeled = -1;
+	private static int featureFreqCutOff = 1;
 	private static double lambda1 = 10, lambda2 = 0;
+	private static String logFilePath = "./experiments/all_lambda1_01_lambda2_0.mat";
 	
 	public static void main(String[] args) {
 		runNonRegularizedExperiment();

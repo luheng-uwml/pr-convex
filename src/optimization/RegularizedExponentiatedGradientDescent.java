@@ -167,16 +167,19 @@ public class RegularizedExponentiatedGradientDescent {
 				int instanceID = workList[randomGen.nextInt(workList.length)];
 				update(instanceID, stepSize);
 			}
+			double paraNorm = ArrayHelper.l2NormSquared(parameters);
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective +
 					"\tPREV::\t" + prevObjective +
-					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
+					"\tPARA::\t" + paraNorm +
 					"\tGRAPH::\t" + totalGraphPenalty);
 			
 			double[] devAcc = validate(devList);
 			history.add(iteration, "objective", objective);
 			history.add(iteration, "stepsize", stepSize);
+			history.add(iteration, "para_norm", paraNorm);
+			history.add(iteration, "graph_norm", totalGraphPenalty);
 			history.add(iteration, "dev_f1", devAcc[2]);
 			
 			if (iteration % 5 == 4) {
