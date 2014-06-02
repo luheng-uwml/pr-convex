@@ -14,6 +14,8 @@ import graph.GraphRegularizer;
  *
  */
 public class RegularizedExponentiatedGradientDescent {
+	public OptimizationHistory history;
+	
 	SequentialFeatures features;
 	SequentialInference model;
 	GraphRegularizer graph;
@@ -47,6 +49,7 @@ public class RegularizedExponentiatedGradientDescent {
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
+		this.history = new OptimizationHistory();
 		initialize();
 	}
 	
@@ -170,6 +173,12 @@ public class RegularizedExponentiatedGradientDescent {
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tGRAPH::\t" + totalGraphPenalty);
+			
+			double[] devAcc = validate(devList);
+			history.add(iteration, "objective", objective);
+			history.add(iteration, "stepsize", stepSize);
+			history.add(iteration, "dev_f1", devAcc[2]);
+			
 			if (iteration % 5 == 4) {
 				validate(trainList);
 				validate(devList);
@@ -330,7 +339,7 @@ public class RegularizedExponentiatedGradientDescent {
 		}
 	}
 	
-	private void validate(int[] instList) {
+	private double[] validate(int[] instList) {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
@@ -355,6 +364,7 @@ public class RegularizedExponentiatedGradientDescent {
 				(2 * precision * recall) / (precision + recall) : 0.0;
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
+		return runningAccuracy;
 	}
 	
 

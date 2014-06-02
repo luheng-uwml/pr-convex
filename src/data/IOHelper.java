@@ -3,7 +3,13 @@ package data;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
+import com.jmatio.io.MatFileWriter;
+import com.jmatio.types.MLArray;
+import com.jmatio.types.MLDouble;
+
+import optimization.OptimizationHistory;
 import feature.SparseVector;
 
 public class IOHelper {
@@ -55,5 +61,16 @@ public class IOHelper {
 			fout.write(i + "\t" + freq + "\t" + str + "\n");
 		}
 		fout.close();
+	}
+	
+	public static void saveOptimizationHistory(OptimizationHistory optHistory,
+			String filePath) throws IOException {
+		 ArrayList<MLArray> mlObjects = new ArrayList<MLArray>();
+		 for (String label : optHistory.history.keySet()) {
+			 double[] arr = optHistory.history.get(label).toArray();
+			 MLDouble mlArr = new MLDouble(label, arr, 1);
+			 mlObjects.add(mlArr);
+		 }
+		 new MatFileWriter(filePath, mlObjects);
 	}
 }

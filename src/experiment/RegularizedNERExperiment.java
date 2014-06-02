@@ -1,14 +1,15 @@
 package experiment;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import optimization.*;
 import data.Evaluator;
+import data.IOHelper;
 import data.NERCorpus;
 import data.NERSequence;
 import feature.*;
 import graph.*;
-
 import gnu.trove.list.array.TIntArrayList;
 
 public class RegularizedNERExperiment {
@@ -29,7 +30,7 @@ public class RegularizedNERExperiment {
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
 		//int numLabeled = corpusTrain.size(), numTrains = numLabeled;
-		int numLabeled = 3000, numTrains = numLabeled;
+		int numLabeled = 1000, numTrains = numLabeled;
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -60,7 +61,7 @@ public class RegularizedNERExperiment {
 						   "\tnum all::\t" + numInstances);
 		
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-				trainInstances, 3);
+				trainInstances, 1);
 		extractor.printInfo();
 		
 		SequentialFeatures features = extractor.
@@ -78,6 +79,11 @@ public class RegularizedNERExperiment {
 						lambda1, 0, 0.5, 500, 12345);
 		
 		optimizer.optimize();
+		try {
+			IOHelper.saveOptimizationHistory(optimizer.history, "./experiments/temp.mat");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private static void runRegularizedExperiment() {
@@ -95,7 +101,7 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numLabeled = 3000, numTrains = 3000;
+		int numLabeled = 1000, numTrains = numLabeled;
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
@@ -155,11 +161,16 @@ public class RegularizedNERExperiment {
 						lambda1, lambda2, 0.5, 500, 12345);
 		
 		optimizer.optimize();
+		try {
+			IOHelper.saveOptimizationHistory(optimizer.history, "./experiments/temp.mat");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
-	private static double lambda1 = 10, lambda2 = 5;
+	private static double lambda1 = 10, lambda2 = 0;
 	
 	public static void main(String[] args) {
-		runRegularizedExperiment();
+		runNonRegularizedExperiment();
 	}
 }
