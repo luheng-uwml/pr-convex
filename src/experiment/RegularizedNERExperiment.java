@@ -13,7 +13,7 @@ import gnu.trove.list.array.TIntArrayList;
 
 public class RegularizedNERExperiment {
 	
-	private static void runNonReguarizedExperiment() {
+	private static void runNonRegularizedExperiment() {
 		NERCorpus corpusTrain = new NERCorpus();
 		corpusTrain.readFromCoNLL2003("./data/eng.train");
 	
@@ -28,7 +28,8 @@ public class RegularizedNERExperiment {
 		}
 		System.out.println("Number of all tokens:\t" + numAllTokens);
 		
-		int numLabeled = 3000, numTrains = 3000;
+		//int numLabeled = corpusTrain.size(), numTrains = numLabeled;
+		int numLabeled = 3000, numTrains = numLabeled;
 		int numInstances = numTrains + corpusDev.size();
 		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();

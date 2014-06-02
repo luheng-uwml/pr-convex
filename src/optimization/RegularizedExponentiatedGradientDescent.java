@@ -355,21 +355,6 @@ public class RegularizedExponentiatedGradientDescent {
 				(2 * precision * recall) / (precision + recall) : 0.0;
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
-		
-		//see discrpency between unlabeled counts and gold
-		double[] diff = new double[numFeatures];
-		for (int i = 0; i < numFeatures; i++) {
-			diff[i] = empiricalCounts[i] / trainList.length -
-					(labeledCounts[i] + unlabeledCounts[i]) /
-					(trainList.length + devList.length);
-			//System.out.println(i + "\t" + diff[i]);
-			/*
-			if (diff[i] * diff[i] > 10) {
-				System.out.println(i + "\t" + diff[i] + "\t" +
-						features.getFeatureName(i));
-			}*/
-		}
-		System.out.println("diff::\t" + ArrayHelper.l2NormSquared(diff));
 	}
 	
 
