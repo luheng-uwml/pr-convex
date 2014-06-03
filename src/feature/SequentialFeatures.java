@@ -59,8 +59,10 @@ public class SequentialFeatures {
 	}
 	
 	public void computeEdgeScores(double[][] edgeScores, double[] weights) {
-		for (int i = 0; i < numStates; i++) { 
-			for (int j = 0; j < numStates; j++) {
+		for (int i = 0; i < numTargetStates; i++) {
+			edgeScores[i][S0] = computeEdgeScore(i, S0, weights);
+			edgeScores[SN][i] = computeEdgeScore(SN, i, weights);
+			for (int j = 0; j < numTargetStates; j++) {
 				edgeScores[i][j] = computeEdgeScore(i, j, weights);
 			}
 		}
@@ -110,8 +112,8 @@ public class SequentialFeatures {
 		nodeFeatures[instanceID][position].addTo(counts, weight, offset);
 	}
 	
-	protected void countEdgeFeature(int stateID, int prevStateID, int scale,
-			int[] counts) {
+	protected void countEdgeFeature(int stateID, int prevStateID, double scale,
+			double[] counts) {
 		SparseVector fvec = edgeFeatures[stateID][prevStateID];
 		if (fvec != null) {
 			for (int i : fvec.indices) {
@@ -121,7 +123,7 @@ public class SequentialFeatures {
 	}
 	
 	protected void countNodeFeature(int instanceID, int position, int stateID,
-			int scale, int[] counts) {
+			double scale, double[] counts) {
 		int offset = numEdgeFeatures + stateID * numNodeFeatures;
 		SparseVector fvec = nodeFeatures[instanceID][position];
 		for (int i : fvec.indices) {
@@ -130,22 +132,24 @@ public class SequentialFeatures {
 	}
 	
 	// count feature frequency:
-	public void countFeatures(int[] instList, int[] counts) {
+	public void countFeatures(int[] instList, double[] counts) {
 		int totalLength = 0;
+		double expCount = 1.0 / numTargetStates;
+		double expEdgeCount = expCount * expCount;
 		for (int instanceID : instList) {
 			int length = getInstanceLength(instanceID);
 			totalLength += (length - 1);
 			for (int i = 0; i < length; i++) {
 				for (int j = 0; j < numTargetStates; j++) {
-					countNodeFeature(instanceID, i, j, 1, counts);
+					countNodeFeature(instanceID, i, j, expCount, counts);
 				}
 			}
 		}
 		for (int i = 0; i < numTargetStates; i++) {
-			countEdgeFeature(i, S0, instList.length, counts);
-			countEdgeFeature(SN, i, instList.length, counts);
+			countEdgeFeature(i, S0, expCount * instList.length, counts);
+			countEdgeFeature(SN, i, expCount * instList.length, counts);
 			for (int j = 0; j < numTargetStates; j++) {
-				countEdgeFeature(i, j, totalLength, counts);
+				countEdgeFeature(i, j, expEdgeCount * totalLength, counts);
 			}
 		}
 	}

@@ -6,22 +6,25 @@ import org.kohsuke.args4j.Option;
 
 public class ExperimentConfig {
 	@Option(name = "-num-labels", usage="")
-	public int numLabeled = -1;
+	public int numLabeled = 5000;
 	
 	@Option(name = "-graph", usage="")
-	public boolean useGraph;
+	public boolean useGraph = false;
+	
+	@Option(name = "-ssl", usage="")
+	public boolean sslTraining = false;
 	
 	@Option(name = "-min-ff", usage="")
 	public int featureFreqCutOff = 1;
 	
 	@Option(name = "-lambda1", usage="")
-	public double lambda1 = 10;
+	public double lambda1 = 1;
 	
 	@Option(name = "-lambda2", usage="")
 	public double lambda2 = 0;
 	
 	@Option(name = "-matpath", usage="")
-	public String logFilePath = "./experiments/all_lambda1_01_lambda2_0.mat";
+	public String logFilePath = "./experiments/temp.mat";
 	
 	public ExperimentConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);

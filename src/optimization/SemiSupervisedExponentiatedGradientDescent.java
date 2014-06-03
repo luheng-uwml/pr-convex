@@ -89,8 +89,8 @@ public class SemiSupervisedExponentiatedGradientDescent {
 	
 	private void initializeTrainRatio() {
 		//trainRatio = new double[numFeatures];
-		int[] trainFeatureCounts = new int[numFeatures];
-		int[] devFeatureCounts = new int[numFeatures];
+		double[] trainFeatureCounts = new double[numFeatures];
+		double[] devFeatureCounts = new double[numFeatures];
 		Arrays.fill(trainFeatureCounts, 0);
 		Arrays.fill(devFeatureCounts, 0);
 		features.countFeatures(trainList, trainFeatureCounts);

@@ -84,6 +84,9 @@ public class NERCorpus {
 			if (this.isLabeled) {
 				nerTagIDs[i] = nerDict.addString(nerTags.get(i));
 			} else {
+				if (!nerDict.contains(nerTags.get(i))) {
+					System.out.println("unseen tag:\t" + nerTags.get(i));
+				}
 				nerTagIDs[i] = nerDict.addString(nerTags.get(i), "O");
 			}
 		}

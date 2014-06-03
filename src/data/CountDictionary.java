@@ -82,6 +82,10 @@ public class CountDictionary {
 				addString(unseenMarker);
 	}
 	
+	public boolean contains(String str) {
+		return str2index.contains(str);
+	}
+	
 	public int lookupString(String str) {
 		if (!str2index.contains(str)) {
 			return -1;

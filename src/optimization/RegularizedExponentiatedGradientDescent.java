@@ -99,8 +99,8 @@ public class RegularizedExponentiatedGradientDescent {
 	}
 	
 	private void initializeTrainRatio() {
-		int[] trainFeatureCounts = new int[numFeatures];
-		int[] devFeatureCounts = new int[numFeatures];
+		double[] trainFeatureCounts = new double[numFeatures];
+		double[] devFeatureCounts = new double[numFeatures];
 		Arrays.fill(trainFeatureCounts, 0);
 		Arrays.fill(devFeatureCounts, 0);
 		features.countFeatures(trainList, trainFeatureCounts);

@@ -84,19 +84,28 @@ public class RegularizedNERExperiment {
 		}
 			
 		// here lambda = 1 / C
-		RegularizedExponentiatedGradientDescent optimizer =
-				new RegularizedExponentiatedGradientDescent(features, graph,
+		if (config.sslTraining) {
+			RegularizedExponentiatedGradientDescent optimizer =
+					new RegularizedExponentiatedGradientDescent(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
 						config.lambda1, config.useGraph ? config.lambda2 : 0,
 						0.5, 500, 12345);
-		
-		optimizer.optimize();
-		try {
-			IOHelper.saveOptimizationHistory(optimizer.history,
-					config.logFilePath);
-		} catch (IOException e) {
-			e.printStackTrace();
+			optimizer.optimize();
+			try {
+				IOHelper.saveOptimizationHistory(optimizer.history,
+						config.logFilePath);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			SupervisedExponentiatedGradientDescent optimizer =
+					new SupervisedExponentiatedGradientDescent(features, graph,
+						labels, trainList.toArray(), devList.toArray(), eval,
+						config.lambda1, config.useGraph ? config.lambda2 : 0,
+						0.5, 500, 12345);
+			optimizer.optimize();
 		}
+		
 	}
 	
 	public static void main(String[] args) {
