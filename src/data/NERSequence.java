@@ -39,4 +39,8 @@ public class NERSequence {
 	public String getChunkTag(int i) {
 		return corpus.chunkDict.getString(chunkTags[i]);
 	}
+	
+	public String getNERTag(int i) {
+		return corpus.nerDict.getString(nerTags[i]);
+	}
 }

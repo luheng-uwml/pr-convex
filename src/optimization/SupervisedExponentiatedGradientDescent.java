@@ -19,7 +19,7 @@ public class SupervisedExponentiatedGradientDescent {
 	SequentialInference model;
 	GraphRegularizer graph;
 	Evaluator eval;
-	int[][] labels;
+	int[][] labels, predictions;
 	int[] trainList, devList;
 	double[] parameters, empiricalCounts, expectedCounts, trainRatio, logNorm,
 	         entropy;

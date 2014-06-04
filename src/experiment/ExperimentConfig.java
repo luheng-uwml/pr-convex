@@ -6,7 +6,7 @@ import org.kohsuke.args4j.Option;
 
 public class ExperimentConfig {
 	@Option(name = "-num-labels", usage="")
-	public int numLabeled = 5000;
+	public int numLabeled = -1;
 	
 	@Option(name = "-graph", usage="")
 	public boolean useGraph = false;
@@ -18,7 +18,7 @@ public class ExperimentConfig {
 	public int featureFreqCutOff = 1;
 	
 	@Option(name = "-lambda1", usage="")
-	public double lambda1 = 1;
+	public double lambda1 = 10;
 	
 	@Option(name = "-lambda2", usage="")
 	public double lambda2 = 0;
