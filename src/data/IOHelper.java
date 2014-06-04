@@ -77,18 +77,18 @@ public class IOHelper {
 	// File used for CoNLLEval input
 	// output format: token, pos-tag, chunk-tag, gold-tag, pred-tag
 	public static void savePrediction(NERCorpus corpus,
-			ArrayList<NERSequence> instances,  int[][] prediction,
-			String filePath) throws IOException {
+			ArrayList<NERSequence> instances, int[] instList,
+			int[][] prediction, String filePath) throws IOException {
 		BufferedWriter fout = new BufferedWriter(new FileWriter(filePath));
-		for (int i = 0; i < instances.size(); i++) {
+		for (int i : instList) {
 			NERSequence instance = instances.get(i);
 			for (int j = 0; j < instance.length; j++) {
 				fout.write(String.format("%s %s %s %s %s\n",
 						instance.getToken(j),
-						instance.getPosTag(i),
-						instance.getChunkTag(i),
-						instance.getNERTag(i),
-						corpus.nerDict.getString(prediction[i][j]));
+						instance.getPosTag(j),
+						instance.getChunkTag(j),
+						instance.getNERTag(j),
+						corpus.nerDict.getString(prediction[i][j])));
 			}
 			fout.write("\n");
 		}

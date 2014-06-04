@@ -77,8 +77,8 @@ public class BatchGradientDescent {
 			stepSize = currStepSize * 1.5;
 			
 			if (iteration % 100 == 99) {
-				OptimizationHelper.testModel(features, eval, labels, devList,
-						parameters);
+				OptimizationHelper.testModel(features, eval, devList, labels,
+						null, parameters);
 			}
 		}
 	}

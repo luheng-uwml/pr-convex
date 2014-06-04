@@ -21,7 +21,7 @@ public class RegularizedNERExperiment {
 		corpusTrain.readFromCoNLL2003("./data/eng.train");
 	
 		NERCorpus corpusDev = new NERCorpus(corpusTrain, false);
-		corpusDev.readFromCoNLL2003("./data/eng.testa");
+		corpusDev.readFromCoNLL2003("./data/eng.testb");
 		corpusTrain.printCorpusInfo();
 		corpusDev.printCorpusInfo();
 		
@@ -104,6 +104,14 @@ public class RegularizedNERExperiment {
 						config.lambda1, config.useGraph ? config.lambda2 : 0,
 						0.5, 500, 12345);
 			optimizer.optimize();
+			
+			try {
+				IOHelper.savePrediction(corpusDev, allInstances,
+						devList.toArray(), optimizer.predictions,
+						config.predPath);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
 	}

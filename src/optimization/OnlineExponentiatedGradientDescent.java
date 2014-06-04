@@ -102,7 +102,7 @@ public class OnlineExponentiatedGradientDescent {
 		for (int i = 0; i < numFeatures; i++) {
 			theta[i] = parameters[i] * lambda;
 		}
-		OptimizationHelper.testModel(features, eval, labels, instList,
+		OptimizationHelper.testModel(features, eval, instList, labels, null,
 				theta);
 	}
 	

@@ -320,6 +320,7 @@ public class SemiSupervisedExponentiatedGradientDescent {
 		for (int i = 0; i < numFeatures; i++) {
 			theta[i] = parameters[i] * lambda1;
 		}
-		OptimizationHelper.testModel(features, eval, labels, instList, theta);
+		OptimizationHelper.testModel(features, eval, instList, labels, null,
+				theta);
 	}
 }

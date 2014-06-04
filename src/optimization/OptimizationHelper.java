@@ -79,7 +79,8 @@ public class OptimizationHelper {
 	}
 	
 	public static void testModel(SequentialFeatures features, Evaluator eval,
-			int[][] labels, int[] devList, double[] parameters) {
+			int[] instList, int[][] labels, int[][] predictions,
+			double[] parameters) {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
@@ -88,17 +89,19 @@ public class OptimizationHelper {
 		SequentialInference model= new SequentialInference(1000, numStates);
 		double[][] edgeScores = new double[numStates][numStates];
 		features.computeEdgeScores(edgeScores, parameters);
-		for (int i : devList) {
+		for (int i : instList) {
 			int length = features.getInstanceLength(i);
 			double[][] nodeScores = new double[length][numTargetStates];
 			double[][] nodeMarginals = new double[length][numStates];
 			double[][][] edgeMarginals =
 					new double[length + 1][numStates][numStates];
-			int[] decoded = new int[length];
+			int[] decoded = predictions == null ? new int[length] :
+							predictions[i];
 			features.computeNodeScores(i, nodeScores, parameters);
-			model.computeMarginals(nodeScores, edgeScores, 
-					nodeMarginals, edgeMarginals);
-			model.posteriorDecoding(nodeMarginals, decoded);
+			//model.computeMarginals(nodeScores, edgeScores, 
+			//		nodeMarginals, edgeMarginals);
+			//model.posteriorDecoding(nodeMarginals, decoded);
+			model.viterbiDecoding(nodeScores, edgeScores, decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];
 			runningAccuracy[1] += result[1];

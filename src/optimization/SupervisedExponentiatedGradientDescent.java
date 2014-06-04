@@ -15,11 +15,13 @@ import graph.GraphRegularizer;
  *
  */
 public class SupervisedExponentiatedGradientDescent {
+	public int[][] predictions;
+	
 	SequentialFeatures features;
 	SequentialInference model;
 	GraphRegularizer graph;
 	Evaluator eval;
-	int[][] labels, predictions;
+	int[][] labels;
 	int[] trainList, devList;
 	double[] parameters, empiricalCounts, expectedCounts, trainRatio, logNorm,
 	         entropy;
@@ -67,12 +69,17 @@ public class SupervisedExponentiatedGradientDescent {
 		nodeCounts = new double[numTargetStates][graph.numNodes];
 		edgeScores = new double[numInstances][numStates][numStates];
 		nodeScores = new double[numInstances][][];
+		predictions = new int[numInstances][];
 		logNorm = new double[numInstances];
 		entropy = new double[numInstances];
 		for (int i : trainList) {
 			int length = features.getInstanceLength(i);
 			nodeScores[i] = new double[length][numTargetStates];
 			ArrayHelper.deepFill(nodeScores[i], 0.0);
+			predictions[i] = new int[length];
+		}
+		for (int i : devList) {
+			predictions[i] = new int[features.getInstanceLength(i)];
 		}
 		ArrayHelper.deepFill(parameters, 0.0);
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
@@ -161,7 +168,7 @@ public class SupervisedExponentiatedGradientDescent {
 					"\tGRAPH::\t" + totalGraphPenalty);
 			if (iteration % 5 == 4) {
 				validate(trainList);
-				computeAccuracy(devList);
+				predict(devList);
 				computePrimalObjective();
 				computeFeatureAgreement();
 			}
@@ -178,7 +185,7 @@ public class SupervisedExponentiatedGradientDescent {
 		}
 		System.out.println("Optimization finished.");
 		validate(trainList);
-		computeAccuracy(devList);
+		predict(devList);
 		computePrimalObjective();
 	}
 	
@@ -323,12 +330,13 @@ public class SupervisedExponentiatedGradientDescent {
 	}
 	
 
-	public void computeAccuracy(int[] instList) {
+	public void predict(int[] instList) {
 		double[] theta = new double[numFeatures];
 		for (int i = 0; i < numFeatures; i++) {
 			theta[i] = parameters[i] * lambda1;
 		}
-		OptimizationHelper.testModel(features, eval, labels, instList, theta);
+		OptimizationHelper.testModel(features, eval, instList, labels,
+				predictions, theta);
 	}
 	
 	private void computeFeatureAgreement() {

@@ -107,8 +107,33 @@ public class SequentialInference {
 	
 	public void viterbiDecoding(double[][] nodeScores, double[][] edgeScores,
 			int[] prediction) {
-		// TODO: viterbi decoding
+		int length = nodeScores.length;
+		double[][] best = new double[length][numTargetStates];
+		int[][] prev = new int[length][numTargetStates];
+		for (int j = 0; j < numTargetStates; j++) {
+			best[0][j] = edgeScores[j][S0] + nodeScores[0][j];
+			prev[0][j] = S0;
+		}
+		for(int i = 1; i < length; i++) {
+			for (int j = 0; j < numTargetStates; j++) {
+				best[i][j] = Double.NEGATIVE_INFINITY;
+				prev[i][j] = -1;
+				for (int k = 0; k < numTargetStates; k++) {
+					double r = best[i-1][k] + edgeScores[j][k] +
+							   nodeScores[i][j];
+					if(r > best[i][j]) {
+						best[i][j] = r;
+						prev[i][j] = k;
+					}
+				}
+			}
+		}
+		prediction[length - 1] = LatticeHelper.getMaxIndex(best[length-1]);
+		for(int i = length - 1; i > 0; i--) {
+			prediction[i-1] = prev[i][prediction[i]];
+		}
 	}
+	
 	
 	public double computeEntropy(double[][] nodeScores, double[][] edgeScores,
 			double[][][] edgeMarginals, double logNorm) {

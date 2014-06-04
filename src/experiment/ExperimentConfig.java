@@ -18,13 +18,16 @@ public class ExperimentConfig {
 	public int featureFreqCutOff = 1;
 	
 	@Option(name = "-lambda1", usage="")
-	public double lambda1 = 10;
+	public double lambda1 = 1;
 	
 	@Option(name = "-lambda2", usage="")
 	public double lambda2 = 0;
 	
 	@Option(name = "-matpath", usage="")
 	public String logFilePath = "./experiments/temp.mat";
+	
+	@Option(name = "-pred-path", usage="")
+	public String predPath = "./experiments/temp.pred";
 	
 	public ExperimentConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);
