@@ -154,8 +154,12 @@ public class RegularizedExponentiatedGradientDescentPQ {
 	}
 	
 	public void optimize() {
+		double lambda1Final = lambda1;
+		lambda1 = Math.min(0.1, lambda1Final);
+		objective += 0.5 * (lambda1 - lambda1Final) * ArrayHelper.l2NormSquared(parameters);
 		double stepSize = initialStepSize;
 		double prevObjective = objective;
+		
 		// warm start
 		for (int iteration = 0; iteration < 100; iteration ++) {
 			for (int k = 0; k < trainList.length; k++) {
@@ -163,6 +167,7 @@ public class RegularizedExponentiatedGradientDescentPQ {
 			}
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
+					"\tLAMBDA:\t" + lambda1 +
 					"\tOBJ::\t" + objective +
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
@@ -182,8 +187,11 @@ public class RegularizedExponentiatedGradientDescentPQ {
 			}
 			prevObjective = objective;
 		}
+		
 		initializeQ();
 		prevObjective = objective;
+		
+		double improvement = Double.MAX_VALUE;
 		for (int iteration = 0; iteration < maxNumIterations; iteration ++) {
 			for (int k = 0; k < workList.length; k++) {
 				int lottery = randomGen.nextInt(workList.length + devList.length);
@@ -195,7 +203,9 @@ public class RegularizedExponentiatedGradientDescentPQ {
 			}
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
+					"\tLAMBDA:\t" + lambda1 +
 					"\tOBJ::\t" + objective +
+					"\tIMPR::\t" + improvement +
 					"\tPREV::\t" + prevObjective +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tGRAPH::\t" + totalGraphPenalty);
@@ -205,15 +215,20 @@ public class RegularizedExponentiatedGradientDescentPQ {
 				validateQ(devList);
 				computeAccuracy(devList);
 				computePrimalObjective();
-				//computeDesiredObjective();
 			}
 			if (objective < prevObjective) {
 				stepSize *= 1.02;
 			} else {
 				stepSize *= 0.5;
 			}
-			if (Math.abs((prevObjective - objective) / prevObjective) <
-					stoppingCriterion) {
+			improvement =Math.abs((prevObjective - objective) / prevObjective);
+			if (improvement < 1e-3) {
+				double oldLambda = lambda1;
+				lambda1 = Math.min(lambda1 * 1.5, lambda1Final);
+				objective += 0.5 * (lambda1 - oldLambda) *
+						ArrayHelper.l2NormSquared(parameters);
+			}
+			if (improvement < stoppingCriterion && lambda1 >= lambda1Final) {
 				break;
 			}
 			prevObjective = objective;

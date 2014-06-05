@@ -21,7 +21,7 @@ public class ExperimentConfig {
 	public int featureFreqCutOff = 1;
 	
 	@Option(name = "-lambda1", usage="")
-	public double lambda1 = 1;
+	public double lambda1 = 0.1;
 	
 	@Option(name = "-lambda2", usage="")
 	public double lambda2 = 1;

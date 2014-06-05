@@ -133,8 +133,8 @@ public class SupervisedExponentiatedGradientDescent {
 		for (int instanceID : trainList) {
 			OptimizationHelper.computeHardCounts(features, instanceID, labels,
 					empiricalCounts);
-			//OptimizationHelper.computeHardCounts(graph, instanceID, labels,
-			//		nodeCounts, 1.0);
+			OptimizationHelper.computeHardCounts(graph, instanceID, labels,
+					nodeCounts, 1.0);
 		}
 		// compute expected counts
 		for (int instanceID : trainList) {

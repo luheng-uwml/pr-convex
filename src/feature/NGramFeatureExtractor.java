@@ -37,6 +37,14 @@ public class NGramFeatureExtractor {
 		this.ngramIDs = null;
 		this.ngramFeatures = null;
 		this.denseFeatures = null;
+		this.ngramDict = null;
+	}
+	
+	public NGramFeatureExtractor(NERCorpus corpus,
+			ArrayList<NERSequence> instances, int ngramSize,
+			boolean toLowerCase, CountDictionary ngramDict) {
+		this(corpus, instances, ngramSize, toLowerCase);
+		this.ngramDict = ngramDict;
 	}
 	
 	public int[][] getNGramIDs() {
@@ -80,8 +88,11 @@ public class NGramFeatureExtractor {
 	}
 	
 	private void extractNGrams(ArrayList<NERSequence> instances) {
-		ngramDict = new CountDictionary();
 		ngramIDs = new int[instances.size()][];
+		boolean useOldNGrams = (ngramDict != null); 
+		if (!useOldNGrams) {
+			ngramDict = new CountDictionary();
+		}
 		int leftLen = (ngramSize / 2),
 			rightLen = (ngramSize / 2) + (ngramSize % 2);
 		for (int instanceID = 0; instanceID < instances.size(); instanceID++) {
@@ -103,7 +114,9 @@ public class NGramFeatureExtractor {
 						ngram += " ";
 					}
 				}
-				int ngramID = ngramDict.addString(ngram);
+				int ngramID = useOldNGrams ? ngramDict.lookupString(ngram) :
+											 ngramDict.addString(ngram);
+				assert ngramID >= 0;
 				ngramIDs[instanceID][i] = ngramID;
 			}
 		}
