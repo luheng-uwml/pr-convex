@@ -21,7 +21,7 @@ public class RegularizedNERExperiment {
 		corpusTrain.readFromCoNLL2003("./data/eng.train");
 	
 		NERCorpus corpusDev = new NERCorpus(corpusTrain, false);
-		corpusDev.readFromCoNLL2003("./data/eng.testb");
+		corpusDev.readFromCoNLL2003("./data/eng.testa");
 		corpusTrain.printCorpusInfo();
 		corpusDev.printCorpusInfo();
 		
@@ -97,7 +97,15 @@ public class RegularizedNERExperiment {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		} else {
+		} else if (config.pqlTraining) {
+			RegularizedExponentiatedGradientDescentPQ optimizer =
+					new RegularizedExponentiatedGradientDescentPQ(features, graph,
+						labels, trainList.toArray(), devList.toArray(), eval,
+						config.lambda1, config.useGraph ? config.lambda2 : 0, 1,
+						0.5, 500, 12345);
+			optimizer.optimize();
+		}
+		else {
 			SupervisedExponentiatedGradientDescent optimizer =
 					new SupervisedExponentiatedGradientDescent(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,

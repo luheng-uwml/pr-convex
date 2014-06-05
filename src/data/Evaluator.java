@@ -18,6 +18,7 @@ public class Evaluator {
 		int numPred = predSpans.size();
 		int numMatched = getMatchedSpans(gold, goldSpans, predSpans);
 		int[] result = { numGold, numPred, numMatched };
+		//System.out.println("::::\t" + numGold + "\t, " + numPred + "\t" + numMatched);
 		return result;
 	}
 	
@@ -27,21 +28,21 @@ public class Evaluator {
 		ArrayList<int[]> spans = new ArrayList<int[]>();
 		for (int i = 0; i < length; i++) {
 			String tag = tagDict.getString(tags[i]);
-			if (tag.charAt(0) == 'B') {
-				spanStart = i;
-				spanName = tag.substring(2);
-				continue;
-			}
-			if (spanStart > -1 && !tag.endsWith(spanName)) {
+			if (spanStart > -1 && (!tag.endsWith(spanName) ||
+									tag.charAt(0) == 'B')) {
 				int[] span = { spanStart, i - 1, tags[spanStart] };
 				spans.add(span);
 				spanStart = -1;
 			}
-			if (spanStart == -1 && tag.charAt(0) == 'I') {	
-				int[] span = { i, i, tags[i] };
-				spans.add(span);
-				spanStart = -1;
+			if (tag.charAt(0) == 'B' || (spanStart == -1 &&
+										 tag.charAt(0) == 'I')) {
+				spanStart = i;
+				spanName = tag.substring(2);
 			}
+		}
+		if (spanStart > -1) {
+			int[] span = { spanStart, length - 1, tags[spanStart] };
+			spans.add(span);
 		}
 		return spans;
 	}

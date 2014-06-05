@@ -72,11 +72,19 @@ public class NERFeatureExtractor {
 	
 	private SparseVector addEdgeFeatures(String state, String prevState) {
 		DynamicSparseVector fv0 = new DynamicSparseVector();
+		String stateRaw = state.startsWith("O") ? "O" : state.split("-")[0];
+		String prevStateRaw = prevState.startsWith("O") ? "O" :
+							  prevState.split("-")[0];
+		
 		fv0.add(edgeFeatureDict.addString("BIAS"), 1);
 		fv0.add(edgeFeatureDict.addString("NER=" + state), 1);
 		fv0.add(edgeFeatureDict.addString("NER_prev=" + prevState), 1);
 		fv0.add(edgeFeatureDict.addString(
 				"NER_bi=" +state + "_" + prevState), 1);
+		fv0.add(edgeFeatureDict.addString("BIO=" + stateRaw), 1);
+		fv0.add(edgeFeatureDict.addString("BIO_prev=" + prevStateRaw), 1);
+		fv0.add(edgeFeatureDict.addString(
+				"BIO_bi=" +stateRaw + "_" + prevStateRaw), 1);
 		return new SparseVector(fv0);
 	}
 	

@@ -370,14 +370,14 @@ public class SupervisedExponentiatedGradientDescent {
 			minDiff = Math.min(diff * diff, minDiff);
 			maxDiff = Math.max(diff * diff, maxDiff);
 			avgDiff += diff * diff / numFeatures;
-			
+			/*
 			if (diff * diff > 10000) {
 				System.out.println(i + "\t" + trainRatio[i] + "\t" +
 								   features.getFeatureName(i) + "\t" + diff +
 								   "\t" + empiricalCounts[i] + "\t" +
 								   counts[i] + "\t" +
 								   (1.0 * counts[i] / empiricalCounts[i]));
-			}
+			} */
 		}
 		System.out.println("gold diff:\t" + totalDiff + "\tmin:\t" + minDiff +
 					       "\tmax:\t" + maxDiff + "\tavg diff:\t" + avgDiff);

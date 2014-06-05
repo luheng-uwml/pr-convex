@@ -6,13 +6,16 @@ import org.kohsuke.args4j.Option;
 
 public class ExperimentConfig {
 	@Option(name = "-num-labels", usage="")
-	public int numLabeled = -1;
+	public int numLabeled = 1000;
 	
 	@Option(name = "-graph", usage="")
-	public boolean useGraph = false;
+	public boolean useGraph = true;
 	
 	@Option(name = "-ssl", usage="")
 	public boolean sslTraining = false;
+	
+	@Option(name = "-pq", usage="") // the dummy varaible "q" version
+	public boolean pqlTraining = true;
 	
 	@Option(name = "-min-ff", usage="")
 	public int featureFreqCutOff = 1;

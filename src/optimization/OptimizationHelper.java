@@ -111,6 +111,8 @@ public class OptimizationHelper {
 		double recall = runningAccuracy[2] / runningAccuracy[0];
 		double f1 = (precision + recall > 0) ?
 				(2 * precision * recall) / (precision + recall) : 0.0;
+		System.out.println("::::\t" + runningAccuracy[0] + "\t, " +
+				runningAccuracy[1] + "\t" + runningAccuracy[2]);
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
 	}
