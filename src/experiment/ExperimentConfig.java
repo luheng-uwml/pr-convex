@@ -9,7 +9,7 @@ public class ExperimentConfig {
 	public int numLabeled = 1000;
 	
 	@Option(name = "-graph", usage="")
-	public boolean useGraph = true;
+	public boolean useGraph = false;
 	
 	@Option(name = "-ssl", usage="")
 	public boolean sslTraining = false;
@@ -24,7 +24,10 @@ public class ExperimentConfig {
 	public double lambda1 = 1;
 	
 	@Option(name = "-lambda2", usage="")
-	public double lambda2 = 0;
+	public double lambda2 = 1;
+	
+	@Option(name = "-max-iters", usage="")
+	public int maxNumIterations = 1000;
 	
 	@Option(name = "-matpath", usage="")
 	public String logFilePath = "./experiments/temp.mat";

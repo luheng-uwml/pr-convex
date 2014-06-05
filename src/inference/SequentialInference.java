@@ -28,6 +28,27 @@ public class SequentialInference {
 		return logLikelihood;
 	}
 	
+	// compute E_q[p]
+	public double computeWeightedLikelihood(double[][] nodeScores,
+			double[][] edgeScores, double logNorm, double[][][] marginals) {
+		int length = nodeScores.length;
+		double logLikelihood = -logNorm;
+		for (int s = 0; s < numTargetStates; s++) {
+			logLikelihood += marginals[0][s][S0] *
+								(nodeScores[0][s] + edgeScores[s][S0]) +
+							 marginals[length][SN][s] * edgeScores[SN][s];
+		}
+		for (int i = 1; i < length; i++) {
+			for (int s = 0; s < numTargetStates; s++) {
+				for (int sp = 0; sp < numTargetStates; sp++) {
+					logLikelihood += marginals[i][s][sp] *
+							(nodeScores[i][s] + edgeScores[s][sp]); 
+				}
+			}
+		}
+		return logLikelihood;
+	}
+	
 	/* The forward-backword algorithm
 	 * 		nodeScores [position][possible target tag]
 	 * 		edgeScoers [current tag][previous tag]

@@ -27,11 +27,13 @@ public class SupervisedExponentiatedGradientDescent {
 	         entropy;
 	double[][] nodeCounts;
 	double[][][] edgeScores, nodeScores; 
-	double lambda1, lambda2, objective, initialStepSize, totalGraphPenalty;
+	double lambda1, lambda2, finalLambda1, objective, initialStepSize,
+		   totalGraphPenalty;
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
-	static final double stoppingCriterion = 1e-5;
+	static final double stoppingCriterion = 1e-5, minLambda = 1e-2,
+						lambdaScale = 1.5; 
 	
 	public SupervisedExponentiatedGradientDescent(
 			SequentialFeatures features, GraphRegularizer graph,
@@ -44,7 +46,7 @@ public class SupervisedExponentiatedGradientDescent {
 		this.trainList = trainList;
 		this.devList = devList;
 		this.eval = eval;
-		this.lambda1 = 1.0 / lambda1;
+		this.finalLambda1 = 1.0 / lambda1;
 		this.lambda2 = lambda2;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
@@ -103,13 +105,13 @@ public class SupervisedExponentiatedGradientDescent {
 			if (trainFeatureCounts[i] > 0) {
 				trainRatio[i] = 1.0 / trainFeatureCounts[i] *
 						(trainFeatureCounts[i] + devFeatureCounts[i]);
-				//trainRatio[i] = 1.0 / trainList.length *
-				//		(trainList.length + devList.length);
 			} else {
 				trainRatio[i] = 0.0;
 			}
 		}
-		System.out.println("bias-train:\t" + trainFeatureCounts[0] + "\tbias-dev:\t" + devFeatureCounts[0] + "\ttrain ratio:\t" + trainRatio[0]);
+		System.out.println("bias-train:\t" + trainFeatureCounts[0] +
+						   "\tbias-dev:\t" + devFeatureCounts[0] +
+						   "\ttrain ratio:\t" + trainRatio[0]);
 		double avgRatio = 0, nnzRatio = 0;
 		for (int i = 0; i < numFeatures; i++) {
 			if (trainRatio[i] != 0) {
@@ -155,6 +157,7 @@ public class SupervisedExponentiatedGradientDescent {
 	public void optimize() {
 		double stepSize = initialStepSize;
 		double prevObjective = objective;
+		lambda1 = Math.min(minLambda, finalLambda1);
 		for (int iteration = 0; iteration < maxNumIterations; iteration ++) {
 			for (int k = 0; k < trainList.length; k++) {
 				int instanceID = trainList[randomGen.nextInt(trainList.length)];
@@ -164,6 +167,7 @@ public class SupervisedExponentiatedGradientDescent {
 					"\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective +
 					"\tPREV::\t" + prevObjective +
+					"\tLAMBDA::\t" + lambda1 +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
 					"\tGRAPH::\t" + totalGraphPenalty);
 			if (iteration % 5 == 4) {
@@ -177,8 +181,16 @@ public class SupervisedExponentiatedGradientDescent {
 			} else {
 				stepSize *= 0.5;
 			}
-			if (Math.abs((prevObjective - objective) / prevObjective) <
-					stoppingCriterion) {
+			double impr = Math.abs((prevObjective - objective) / prevObjective);
+			if (impr < 1e-3) {
+				lambda1 = Math.min(lambda1 * lambdaScale, finalLambda1);
+				// recompute objective
+				objective = 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
+				for (int i : trainList) {
+					objective -= entropy[i];
+				}
+				stepSize *= 0.5;
+			} else if (impr < stoppingCriterion && lambda1 >= finalLambda1) {
 				break;
 			}
 			prevObjective = objective;

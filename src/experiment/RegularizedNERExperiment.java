@@ -102,7 +102,7 @@ public class RegularizedNERExperiment {
 					new RegularizedExponentiatedGradientDescentPQ(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
 						config.lambda1, config.useGraph ? config.lambda2 : 0, 1,
-						0.5, 500, 12345);
+						0.5, config.maxNumIterations, 12345);
 			optimizer.optimize();
 		}
 		else {
