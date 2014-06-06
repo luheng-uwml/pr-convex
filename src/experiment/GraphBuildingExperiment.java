@@ -83,18 +83,15 @@ public class GraphBuildingExperiment {
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
 		TIntArrayList trainList = new TIntArrayList();
 		TIntArrayList devList = new TIntArrayList();
-		//allInstances.addAll(corpusTrain.instances);
-		if (config.useDevA) {
-			allInstances.addAll(corpusDevA.instances);
-		}
-		if (config.useDevB) {
-			allInstances.addAll(corpusDevB.instances);
-		}
+		
+		allInstances.addAll(corpusDevA.instances);		
+		allInstances.addAll(corpusDevB.instances);
+
 		
 		int numInstances = allInstances.size();
 		int[][] labels = new int[numInstances][];
 		for (int i = 0; i < numInstances; i++) {
-			if (i < 1000) {
+			if (i < corpusDevA.instances.size()) {
 				trainList.add(i);
 			} else {
 				devList.add(i);
@@ -129,7 +126,7 @@ public class GraphBuildingExperiment {
 		SupervisedExponentiatedGradientDescent optimizer =
 				new SupervisedExponentiatedGradientDescent(features, graph,
 					labels, trainList.toArray(), devList.toArray(), eval,
-					0.1, 1.0, 0.5, 500, 12345);
+					1, 1, 0.5, 500, 12345);
 		optimizer.optimize();
 	}
 	

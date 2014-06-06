@@ -51,7 +51,9 @@ public class GraphRegularizer {
 		Arrays.fill(nodeCounts, 0.0);
 		for (int i = 0; i < nodes.length; i++) {
 			for (int j = 0; j < nodes[i].length; j++) {
-				nodeCounts[nodes[i][j]] ++;
+				if (nodes[i][j] >= 0) {
+					nodeCounts[nodes[i][j]] ++;
+				}
 			}
 		}
 	}
@@ -155,6 +157,9 @@ public class GraphRegularizer {
 			}
 			for (int j = 0; j < labels[i].length; j++) {
 				int nodeID = nodes[i][j];
+				if (nodeID < 0) {
+					continue;
+				}
 				int stateID = labels[i][j];
 				counts[stateID][nodeID] += 1.0 / nodeCounts[nodeID];
 			}

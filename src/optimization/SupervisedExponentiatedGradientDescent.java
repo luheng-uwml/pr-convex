@@ -173,7 +173,7 @@ public class SupervisedExponentiatedGradientDescent {
 				validate(trainList);
 				predict(devList);
 				computePrimalObjective();
-				computeFeatureAgreement();
+				//computeFeatureAgreement();
 			}
 			if (objective < prevObjective) {
 				stepSize *= 1.02;
@@ -184,7 +184,8 @@ public class SupervisedExponentiatedGradientDescent {
 			if (improvement < stoppingCriterion && lambda1 >= finalLambda1) {
 				break;
 			}
-			if (improvement < 1e-2 && lambda1 < finalLambda1) {
+			if (objective < prevObjective && improvement < 1e-2 &&
+				lambda1 < finalLambda1) {
 				System.out.println("almost converged under current lambda " +
 								   lambda1 + " ... re-computing objective");
 				lambda1 = Math.min(lambda1 * lambdaScale, finalLambda1);
@@ -374,7 +375,6 @@ public class SupervisedExponentiatedGradientDescent {
 			OptimizationHelper.computeSoftCounts(features, i, tMarginals,
 					counts);
 		}
-		
 		double totalDiff = 0;
 		double tr = 1.0 * (trainList.length + devList.length) / trainList.length;
 		double minDiff = Double.MAX_VALUE, maxDiff = Double.MIN_VALUE,
