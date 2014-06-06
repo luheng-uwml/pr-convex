@@ -1,7 +1,9 @@
 package experiment;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
+import data.IOHelper;
 import data.NERCorpus;
 import data.NERSequence;
 import feature.NGramFeatureExtractor;
@@ -28,7 +30,7 @@ public class GraphBuildingExperiment {
 		corpusDevB.printCorpusInfo();
 		
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
-		allInstances.addAll(corpusTrain.instances);
+		//allInstances.addAll(corpusTrain.instances);
 		if (config.useDevA) {
 			allInstances.addAll(corpusDevA.instances);
 		}
@@ -36,13 +38,23 @@ public class GraphBuildingExperiment {
 			allInstances.addAll(corpusDevB.instances);
 		}
 		
+		System.out.println("Building graph using " + allInstances.size() +
+				" sentences");
 		// build a graph
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
 				corpusTrain, allInstances);
 		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
 				ngramExtractor.getNGramFeatures(), config.numNeighbors, true,
 				config.edgeWeightThreshold, config.numThreads);
-		
+		graphConstructor.run();
 		// save
+		try {
+			IOHelper.saveCountDictionary(ngramExtractor.ngramDict,
+					config.ngramFilePath);
+			IOHelper.saveSparseVectors(graphConstructor.getEdgeList(),
+					config.graphFilePath);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
