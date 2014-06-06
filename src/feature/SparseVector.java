@@ -28,6 +28,10 @@ public class SparseVector {
 		}
 	}
 	
+	public SparseVector() {
+		length = 0;
+	}
+
 	public int size() {
 		return length;
 	}

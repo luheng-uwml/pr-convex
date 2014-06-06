@@ -45,6 +45,13 @@ public class CountDictionary {
 			index2count.set(sid, 0);
 		}
 	}
+	
+	public void insertTuple(int id, String str, int freq) {
+		assert id == index2str.size();
+		index2str.add(str);
+		index2count.add(freq);
+		str2index.put(str,id);
+	}
  	
 	public int addString(String str) {
 		if (str2index.contains(str)) {

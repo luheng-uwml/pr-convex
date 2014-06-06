@@ -1,6 +1,9 @@
 package data;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,13 +35,14 @@ public class IOHelper {
 	public static void saveSparseVectors(SparseVector[] vecs, String filePath)
 			throws IOException {
 		BufferedWriter fout = new BufferedWriter(new FileWriter(filePath));
+		fout.write(String.format("%d\n", vecs.length));
 		for (int i = 0; i < vecs.length; i++) {
 			SparseVector fvec = vecs[i];
 			if (fvec == null || fvec.length == 0) {
 				fout.write("0\n");
 				continue;
 			}
-			fout.write(fvec.length);
+			fout.write(String.format("%d", fvec.length));
 			for (int j = 0; j < fvec.length; j++) {
 				fout.write(String.format("\t%d:%.12f", fvec.indices[j],
 						fvec.values[j]));
@@ -46,6 +50,33 @@ public class IOHelper {
 			fout.write("\n");
 		}
 		fout.close();
+		System.out.println("Saving sparse vector list to:\t" + filePath);
+	}
+	
+	public static SparseVector[] loadSparseVectors(String filePath)
+			throws IOException {
+		BufferedReader fread = new BufferedReader(new FileReader(filePath));
+		int numVecs = Integer.parseInt(fread.readLine());
+		SparseVector[] vecs = new SparseVector[numVecs];
+		for (int i = 0; i < numVecs; i++) {
+			String[] info = fread.readLine().split("\t");
+			int len = Integer.parseInt(info[0]);
+			if (len == 0) {
+				vecs[i] = new SparseVector();
+			} else {
+				int[] ids = new int[len]; 
+				double[] vals = new double[len];
+				for (int j = 0; j < len; j++) {
+					String[] element = info[j+1].split(":");
+					ids[j] = Integer.parseInt(element[0]);
+					vals[j] = Double.parseDouble(element[1]);
+				}
+				vecs[i] = new SparseVector(ids, vals);
+			}
+		}
+		fread.close();
+		System.out.println("Loaded sparse vector list from:\t" + filePath);
+		return vecs;
 	}
 	
 	// file format:
@@ -61,6 +92,22 @@ public class IOHelper {
 			fout.write(i + "\t" + freq + "\t" + str + "\n");
 		}
 		fout.close();
+		System.out.println("Saving count dictionary to:\t" + filePath);
+	}
+	
+	public static CountDictionary loadCountDictionary(String filePath)
+			throws IOException {
+		BufferedReader fread = new BufferedReader(new FileReader(filePath));
+		CountDictionary dict = new CountDictionary();
+		int numNGrams = Integer.parseInt(fread.readLine());
+		for (int i = 0; i < numNGrams; i++) {
+			String[] info = fread.readLine().split("\t");
+			dict.insertTuple(Integer.parseInt(info[0]), info[2],
+					         Integer.parseInt(info[1]));
+		}
+		fread.close();
+		System.out.println("Loaded count dictionary from:\t" + filePath);
+		return dict;
 	}
 	
 	public static void saveOptimizationHistory(OptimizationHistory optHistory,
@@ -72,6 +119,7 @@ public class IOHelper {
 			 mlObjects.add(mlArr);
 		 }
 		 new MatFileWriter(filePath, mlObjects);
+		 System.out.println("Saving optimization history to:\t" + filePath);
 	}
 	
 	// File used for CoNLLEval input
@@ -93,5 +141,6 @@ public class IOHelper {
 			fout.write("\n");
 		}
 		fout.close();
+		System.out.println("Saving prediction to:\t" + filePath);
 	}
 }
