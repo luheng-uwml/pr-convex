@@ -47,6 +47,7 @@ public class SupervisedExponentiatedGradientDescent {
 		this.devList = devList;
 		this.eval = eval;
 		this.finalLambda1 = 1.0 / lambda1;
+		this.lambda1 = Math.min(minLambda, finalLambda1);
 		this.lambda2 = lambda2;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
@@ -100,7 +101,6 @@ public class SupervisedExponentiatedGradientDescent {
 		features.countFeatures(trainList, trainFeatureCounts);
 		features.countFeatures(devList, devFeatureCounts);
 		// features that are not in training data should be ignored 
-		
 		for (int i = 0; i < numFeatures; i++) {
 			if (trainFeatureCounts[i] > 0) {
 				trainRatio[i] = 1.0 / trainFeatureCounts[i] *
@@ -133,8 +133,6 @@ public class SupervisedExponentiatedGradientDescent {
 		for (int instanceID : trainList) {
 			OptimizationHelper.computeHardCounts(features, instanceID, labels,
 					empiricalCounts);
-			OptimizationHelper.computeHardCounts(graph, instanceID, labels,
-					nodeCounts, 1.0);
 		}
 		// compute expected counts
 		for (int instanceID : trainList) {
@@ -145,7 +143,7 @@ public class SupervisedExponentiatedGradientDescent {
 			OptimizationHelper.computeSoftCounts(features, instanceID,
 					tMarginals, expectedCounts, 1.0);
 			OptimizationHelper.computeSoftCounts(graph, instanceID, tMarginals,
-					nodeCounts, +1);
+					nodeCounts, 1.0);
 		}
 		updatePrimalParameters();
 		totalGraphPenalty = graph.computeTotalPenalty(nodeCounts);
@@ -157,7 +155,7 @@ public class SupervisedExponentiatedGradientDescent {
 	public void optimize() {
 		double stepSize = initialStepSize;
 		double prevObjective = objective;
-		lambda1 = Math.min(minLambda, finalLambda1);
+		double improvement = Double.MAX_VALUE;
 		for (int iteration = 0; iteration < maxNumIterations; iteration ++) {
 			for (int k = 0; k < trainList.length; k++) {
 				int instanceID = trainList[randomGen.nextInt(trainList.length)];
@@ -166,6 +164,7 @@ public class SupervisedExponentiatedGradientDescent {
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective +
+					"\tIMPR::\t" + improvement +
 					"\tPREV::\t" + prevObjective +
 					"\tLAMBDA::\t" + lambda1 +
 					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
@@ -181,18 +180,22 @@ public class SupervisedExponentiatedGradientDescent {
 			} else {
 				stepSize *= 0.5;
 			}
-			double impr = Math.abs((prevObjective - objective) / prevObjective);
-			if (impr < 1e-3) {
-				lambda1 = Math.min(lambda1 * lambdaScale, finalLambda1);
-				// recompute objective
-				objective = 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
-				for (int i : trainList) {
-					objective -= entropy[i];
-				}
-				stepSize *= 0.5;
-			} else if (impr < stoppingCriterion && lambda1 >= finalLambda1) {
+			improvement = Math.abs((prevObjective - objective) / prevObjective);
+			if (improvement < stoppingCriterion && lambda1 >= finalLambda1) {
 				break;
 			}
+			if (improvement < 1e-2 && lambda1 < finalLambda1) {
+				System.out.println("almost converged under current lambda " +
+								   lambda1 + " ... re-computing objective");
+				lambda1 = Math.min(lambda1 * lambdaScale, finalLambda1);
+				// recompute objective
+				objective = 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters) +
+						    0.25 * lambda2 * totalGraphPenalty;
+				for (int i : trainList) {
+					objective -= entropy[i];
+				} 
+				//stepSize *= 0.5;
+			} 
 			prevObjective = objective;
 		}
 		System.out.println("Optimization finished.");

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import optimization.RegularizedExponentiatedGradientDescent;
+import optimization.SupervisedExponentiatedGradientDescent;
 import data.CountDictionary;
 import data.Evaluator;
 import data.IOHelper;
@@ -123,10 +124,12 @@ public class GraphBuildingExperiment {
 		GraphRegularizer graph = new GraphRegularizer(
 				ngramExtractor.getNGramIDs(), edges, features.numTargetStates);
 		
-		RegularizedExponentiatedGradientDescent optimizer =
-				new RegularizedExponentiatedGradientDescent(features, graph,
+		graph.validate(labels, corpusTrain.nerDict, ngramDict);
+		
+		SupervisedExponentiatedGradientDescent optimizer =
+				new SupervisedExponentiatedGradientDescent(features, graph,
 					labels, trainList.toArray(), devList.toArray(), eval,
-					1.0, 1.0, 0.5, 500, 12345);
+					0.1, 1.0, 0.5, 500, 12345);
 		optimizer.optimize();
 	}
 	
