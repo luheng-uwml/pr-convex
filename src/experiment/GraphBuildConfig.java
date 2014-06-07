@@ -11,6 +11,9 @@ public class GraphBuildConfig {
 	@Option(name = "-lowercase", usage="")
 	public boolean lowercaseNGrams;
 	
+	@Option(name = "-mutual", usage="")
+	public boolean mutualKNN;
+	
 	@Option(name = "-minw", usage="")
 	public double edgeWeightThreshold = 0.3;
 	
@@ -27,7 +30,7 @@ public class GraphBuildConfig {
 	public boolean useDevB;
 	
 	@Option(name = "-use-word-embedding", usage="")
-	public boolean useWordEmbedding = true;
+	public boolean useWordEmbedding;
 	
 	@Option(name = "-ngram-path", usage="")
 	public String ngramFilePath = "temp.ngrams";

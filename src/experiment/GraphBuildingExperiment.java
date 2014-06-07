@@ -64,7 +64,7 @@ public class GraphBuildingExperiment {
 					wvecDict);
 			graphConstructor = new WordVectorGraphConstructor(wordVectors,
 										config.numNeighbors,
-										config.lowercaseNGrams,
+										config.mutualKNN,
 										config.edgeWeightThreshold,
 										config.numThreads);
 			
@@ -72,7 +72,7 @@ public class GraphBuildingExperiment {
 			graphConstructor = new KNNGraphConstructor(
 										ngramExtractor.getNGramFeatures(),
 										config.numNeighbors,
-										config.lowercaseNGrams,
+										config.mutualKNN,
 										config.edgeWeightThreshold,
 										config.numThreads);
 		}
