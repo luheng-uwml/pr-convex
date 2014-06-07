@@ -6,7 +6,7 @@ import org.kohsuke.args4j.Option;
 
 public class GraphBuildConfig {
 	@Option(name = "-num-neighbors", usage="")
-	public int numNeighbors = 20;
+	public int numNeighbors = 3;
 	
 	@Option(name = "-lowercase", usage="")
 	public boolean lowercaseNGrams;
@@ -17,20 +17,26 @@ public class GraphBuildConfig {
 	@Option(name = "-num-threads", usage="")
 	public int numThreads = 8;
 	
+	@Option(name = "-small-graph", usage="") // build small graph for test use
+	public boolean buildSmallGraph = true;
+	
 	@Option(name = "-use-deva", usage="")
-	public boolean useDevA;
+	public boolean useDevA = true;
 	
 	@Option(name = "-use-devb", usage="")
 	public boolean useDevB;
 	
 	@Option(name = "-use-word-embedding", usage="")
-	public boolean useWordEmbedding;
+	public boolean useWordEmbedding = true;
 	
 	@Option(name = "-ngram-path", usage="")
 	public String ngramFilePath = "temp.ngrams";
 	
 	@Option(name = "-graph-path", usage="")
 	public String graphFilePath = "temp.edges";
+	
+	@Option(name = "-wordvec-path", usage="")
+	public String wordVectorsPath = "./data/all_unigrams.vec";
 	
 	public GraphBuildConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);

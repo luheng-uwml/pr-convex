@@ -10,6 +10,7 @@ import data.Evaluator;
 import data.IOHelper;
 import data.NERCorpus;
 import data.NERSequence;
+import data.WordEmbeddingDictionary;
 import feature.NERFeatureExtractor;
 import feature.NGramFeatureExtractor;
 import feature.SequentialFeatures;
@@ -17,6 +18,7 @@ import feature.SparseVector;
 import gnu.trove.list.array.TIntArrayList;
 import graph.GraphRegularizer;
 import graph.KNNGraphConstructor;
+import graph.WordVectorGraphConstructor;
 
 public class GraphBuildingExperiment {
 	
@@ -37,7 +39,9 @@ public class GraphBuildingExperiment {
 		corpusDevB.printCorpusInfo();
 		
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
-		//allInstances.addAll(corpusTrain.instances);
+		if (!config.buildSmallGraph) {
+			allInstances.addAll(corpusTrain.instances);
+		}
 		if (config.useDevA) {
 			allInstances.addAll(corpusDevA.instances);
 		}
@@ -47,12 +51,31 @@ public class GraphBuildingExperiment {
 		
 		System.out.println("Building graph using " + allInstances.size() +
 				" sentences");
-		// build a graph
+		
+		// extract ngrams
 		NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
 				corpusTrain, allInstances);
-		KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-				ngramExtractor.getNGramFeatures(), config.numNeighbors, true,
-				config.edgeWeightThreshold, config.numThreads);
+		
+		KNNGraphConstructor graphConstructor = null;
+		if (config.useWordEmbedding) {
+			WordEmbeddingDictionary wvecDict = new WordEmbeddingDictionary(
+					config.wordVectorsPath);
+			double[][] wordVectors = ngramExtractor.getWordEmbeddingFeatures(
+					wvecDict);
+			graphConstructor = new WordVectorGraphConstructor(wordVectors,
+										config.numNeighbors,
+										config.lowercaseNGrams,
+										config.edgeWeightThreshold,
+										config.numThreads);
+			
+		} else {
+			graphConstructor = new KNNGraphConstructor(
+										ngramExtractor.getNGramFeatures(),
+										config.numNeighbors,
+										config.lowercaseNGrams,
+										config.edgeWeightThreshold,
+										config.numThreads);
+		}
 		graphConstructor.run();
 		// save
 		try {
@@ -132,7 +155,7 @@ public class GraphBuildingExperiment {
 	
 	public static void main(String[] args) {
 		GraphBuildConfig config = new GraphBuildConfig(args);
-		//buildGraph(config);
+		buildGraph(config);
 		loadGraph(config);
 	}
 }
