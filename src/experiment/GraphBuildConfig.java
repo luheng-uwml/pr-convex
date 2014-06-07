@@ -18,10 +18,10 @@ public class GraphBuildConfig {
 	public int numThreads = 8;
 	
 	@Option(name = "-small-graph", usage="") // build small graph for test use
-	public boolean buildSmallGraph = true;
+	public boolean buildSmallGraph;
 	
 	@Option(name = "-use-deva", usage="")
-	public boolean useDevA = true;
+	public boolean useDevA;
 	
 	@Option(name = "-use-devb", usage="")
 	public boolean useDevB;

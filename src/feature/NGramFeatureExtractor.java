@@ -179,10 +179,14 @@ public class NGramFeatureExtractor {
 			SparseVector fvec = ngramFeatures[i];
 			for (int j = 0; j < fvec.length;j++) {
 				int fid = fvec.indices[j]; 
+				double fval = fvec.values[j];
+				if (Math.abs(fval) < 1e-8) {
+					continue;
+				}
 				double featFreq = 1.0 * ngramFeatureDict.getCount(fid);
 				double ngramProb = 1.0 * ngramDict.getCount(i) / totalNGrams;
-				fvec.values[j] = Math.log(fvec.values[j]) -
-						Math.log(ngramProb) - Math.log(featFreq);			
+				fvec.values[j] = Math.log(fval) - Math.log(ngramProb) -
+								 Math.log(featFreq);			
 			}
 			fvec.normalize();
 		}

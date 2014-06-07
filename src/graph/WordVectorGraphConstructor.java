@@ -1,7 +1,5 @@
 package graph;
 
-import graph.KNNGraphConstructor.EdgeBuilderThread;
-
 public class WordVectorGraphConstructor extends KNNGraphConstructor {
 	double[][] features;
 	
