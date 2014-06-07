@@ -6,7 +6,7 @@ import org.kohsuke.args4j.Option;
 
 public class GraphBuildConfig {
 	@Option(name = "-num-neighbors", usage="")
-	public int numNeighbors = 3;
+	public int numNeighbors = 10;
 	
 	@Option(name = "-lowercase", usage="")
 	public boolean lowercaseNGrams;
@@ -40,6 +40,9 @@ public class GraphBuildConfig {
 	
 	@Option(name = "-wordvec-path", usage="")
 	public String wordVectorsPath = "./data/all_unigrams.vec";
+	
+	@Option(name = "-test-graph", usage="")
+	public boolean testGraph;
 	
 	public GraphBuildConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);

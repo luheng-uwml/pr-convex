@@ -103,13 +103,19 @@ public class GraphBuildingExperiment {
 		NERCorpus corpusDevB = new NERCorpus(corpusTrain, false);
 		corpusDevB.readFromCoNLL2003("./data/eng.testb");
 		corpusDevB.printCorpusInfo();
-		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
 		TIntArrayList trainList = new TIntArrayList();
 		TIntArrayList devList = new TIntArrayList();
 		
-		allInstances.addAll(corpusDevA.instances);		
-		allInstances.addAll(corpusDevB.instances);
-
+		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
+		if (!config.buildSmallGraph) {
+			allInstances.addAll(corpusTrain.instances);
+		}
+		if (config.useDevA) {
+			allInstances.addAll(corpusDevA.instances);
+		}
+		if (config.useDevB) {
+			allInstances.addAll(corpusDevB.instances);
+		}
 		
 		int numInstances = allInstances.size();
 		int[][] labels = new int[numInstances][];
@@ -156,6 +162,8 @@ public class GraphBuildingExperiment {
 	public static void main(String[] args) {
 		GraphBuildConfig config = new GraphBuildConfig(args);
 		buildGraph(config);
-		//loadGraph(config);
+		if (config.testGraph) {
+			loadGraph(config);
+		}
 	}
 }
