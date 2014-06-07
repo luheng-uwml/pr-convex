@@ -156,6 +156,6 @@ public class GraphBuildingExperiment {
 	public static void main(String[] args) {
 		GraphBuildConfig config = new GraphBuildConfig(args);
 		buildGraph(config);
-		loadGraph(config);
+		//loadGraph(config);
 	}
 }
