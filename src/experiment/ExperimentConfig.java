@@ -41,6 +41,9 @@ public class ExperimentConfig {
 	@Option(name = "-max-iters", usage="")
 	public int maxNumIterations = 1000;
 	
+	@Option(name = "-warm-iters", usage="")
+	public int warmStartIterations = 100;
+	
 	@Option(name = "-rand-seed", usage="")
 	public int randomSeed = 12345;
 	

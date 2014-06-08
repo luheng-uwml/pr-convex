@@ -37,7 +37,8 @@ public class PQEGTrainer implements AbstractOptimizer {
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double unlabeledWeight,
-			double initialStepSize, int maxNumIterations, int randomSeed) {
+			double initialStepSize, int maxNumIterations,
+			int warmStartIterations, int randomSeed) {
 		this.features = features;
 		this.graph = graph;
 		this.labels = labels;

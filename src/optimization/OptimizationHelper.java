@@ -92,15 +92,17 @@ public class OptimizationHelper {
 		for (int i : instList) {
 			int length = features.getInstanceLength(i);
 			double[][] nodeScores = new double[length][numTargetStates];
-			double[][] nodeMarginals = new double[length][numStates];
-			double[][][] edgeMarginals =
-					new double[length + 1][numStates][numStates];
 			int[] decoded = predictions == null ? new int[length] :
 							predictions[i];
 			features.computeNodeScores(i, nodeScores, parameters);
-			//model.computeMarginals(nodeScores, edgeScores, 
-			//		nodeMarginals, edgeMarginals);
-			//model.posteriorDecoding(nodeMarginals, decoded);
+			/*
+			double[][] nodeMarginals = new double[length][numStates];
+			double[][][] edgeMarginals =
+					new double[length + 1][numStates][numStates];
+			model.computeMarginals(nodeScores, edgeScores, 
+					nodeMarginals, edgeMarginals);
+			model.posteriorDecoding(nodeMarginals, decoded);
+			*/
 			model.viterbiDecoding(nodeScores, edgeScores, decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];
@@ -111,8 +113,8 @@ public class OptimizationHelper {
 		double recall = runningAccuracy[2] / runningAccuracy[0];
 		double f1 = (precision + recall > 0) ?
 				(2 * precision * recall) / (precision + recall) : 0.0;
-		System.out.println("::::\t" + runningAccuracy[0] + "\t, " +
-				runningAccuracy[1] + "\t" + runningAccuracy[2]);
+		//System.out.println("::::\t" + runningAccuracy[0] + "\t, " +
+		//		runningAccuracy[1] + "\t" + runningAccuracy[2]);
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
 		return runningAccuracy;

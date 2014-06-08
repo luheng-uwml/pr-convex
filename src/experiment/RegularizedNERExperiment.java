@@ -115,7 +115,8 @@ public class RegularizedNERExperiment {
 						graph, labels, trainList.toArray(), devList.toArray(),
 						eval, config.lambda1, config.lambda2, 1.0,
 						config.initialLearningRate,
-						config.maxNumIterations, config.randomSeed);
+						config.maxNumIterations, config.warmStartIterations,
+						config.randomSeed);
 		}
 		else {
 			optimizer = new SupervisedEGTrainer(features, graph,
