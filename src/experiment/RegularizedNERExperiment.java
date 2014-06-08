@@ -45,7 +45,9 @@ public class RegularizedNERExperiment {
 		}
 		if (config.useDevA) {
 			allInstances.addAll(corpusDevA.instances);
-			numTrains += corpusDevA.instances.size();
+			if (!config.useToyData) {
+				numTrains += corpusDevA.instances.size();
+			}
 		}
 		if (config.useDevB) {
 			allInstances.addAll(corpusDevB.instances);
@@ -65,7 +67,7 @@ public class RegularizedNERExperiment {
 			labels[i] = allInstances.get(i).getLabels();
 		}
 		System.out.println("Number of training instances:\t" + numTrains +
-				  		   "Number of test instances:\t" +
+				  		   "\tNumber of test instances:\t" +
 				  		   (numInstances - numTrains));
 		// extract features
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
@@ -98,7 +100,6 @@ public class RegularizedNERExperiment {
 			graph.validate(labels, corpusTrain.nerDict,
 					       ngramExtractor.ngramDict);
 		}
-		// here lambda = 1 / C
 		AbstractOptimizer optimizer = null;
 		if (config.sslTraining) {
 			optimizer = new FeatureRescaledEGTrainer(
@@ -108,37 +109,29 @@ public class RegularizedNERExperiment {
 						config.initialLearningRate,
 						config.maxNumIterations,
 						config.randomSeed);
-			optimizer.optimize();
-			try {
-				IOHelper.saveOptimizationHistory(optimizer.history,
-						config.matFilePath);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		} else if (config.pqlTraining) {
-			PQEGTrainer optimizer =
-					new PQEGTrainer(features,
+			optimizer = new PQEGTrainer(features,
 						graph, labels, trainList.toArray(), devList.toArray(),
 						eval, config.lambda1, config.lambda2, 1.0,
 						config.initialLearningRate,
 						config.maxNumIterations, config.randomSeed);
-			optimizer.optimize();
 		}
 		else {
-			SupervisedEGTrainer optimizer =
-					new SupervisedEGTrainer(features, graph,
+			optimizer = new SupervisedEGTrainer(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
 						config.lambda1, config.lambda2,
 						config.initialLearningRate, config.maxNumIterations,
 						config.randomSeed);
-			optimizer.optimize();
-			try {
-				IOHelper.savePrediction(corpusTrain, allInstances,
-						devList.toArray(), optimizer.predictions,
-						config.predPath);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		}
+		optimizer.optimize();
+		try {
+			IOHelper.saveOptimizationHistory(optimizer.getOptimizationHistory(),
+					config.matFilePath);
+			IOHelper.savePrediction(corpusTrain, allInstances,
+					devList.toArray(), optimizer.getPrediction(),
+					config.predPath);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		
 	}

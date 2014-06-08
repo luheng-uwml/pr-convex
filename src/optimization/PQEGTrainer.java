@@ -44,7 +44,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 		this.trainList = trainList;
 		this.devList = devList;
 		this.eval = eval;
-		this.lambda1 = 1.0 / lambda1;
+		this.lambda1 = lambda1;
 		this.lambda2 = lambda2;
 		this.unlabeledWeight = unlabeledWeight;
 		this.initialStepSize = initialStepSize;
@@ -213,14 +213,26 @@ public class PQEGTrainer implements AbstractOptimizer {
 					updateQ(devList[lottery - workList.length], stepSize);
 				}
 			}
+			
+			double paraNorm = ArrayHelper.l2NormSquared(parameters);
+			
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
 					"\tLAMBDA:\t" + lambda1 +
 					"\tOBJ::\t" + objective +
 					"\tIMPR::\t" + improvement +
 					"\tPREV::\t" + prevObjective +
-					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
+					"\tPARA::\t" + paraNorm +
 					"\tGRAPH::\t" + totalGraphPenalty);
+			
+			double[] devAcc = validateQ(devList);
+			history.add(iteration, "objective", objective);
+			history.add(iteration, "stepsize", stepSize);
+			history.add(iteration, "para_norm", paraNorm);
+			history.add(iteration, "lambda1", lambda1);
+			history.add(iteration, "graph_norm", totalGraphPenalty);
+			history.add(iteration, "dev_f1", devAcc[2]);
+
 			if (iteration % 5 == 4) {
 				validateP(trainList);
 				validateP(devList);
@@ -357,11 +369,13 @@ public class PQEGTrainer implements AbstractOptimizer {
 			features.computeNodeScores(i, tNodes, theta);
 			double pLogNorm = model.computeMarginals(tNodes, tEdges, null, pMargs);
 			if (isLabeled[i]) {
-				primalObjective -= model.computeLabelLikelihood(tNodes, tEdges, pLogNorm, labels[i]);
+				primalObjective -= model.computeLabelLikelihood(tNodes, tEdges,
+						pLogNorm, labels[i]);
 			} else {
 				double[][][] qMargs = new double[length + 1][numStates][numStates];
 				model.computeMarginals(qNodes[i], qEdges[i], null, qMargs);
-				primalObjective -= model.computeWeightedLikelihood(tNodes, tEdges, pLogNorm, qMargs);
+				primalObjective -= model.computeWeightedLikelihood(tNodes,
+						tEdges, pLogNorm, qMargs);
 			}
 		}
 		System.out.println("primal objective::\t" + primalObjective);
@@ -421,7 +435,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 		}
 	}
 	
-	private void validateP(int[] instList) {
+	private double[] validateP(int[] instList) {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
@@ -446,9 +460,10 @@ public class PQEGTrainer implements AbstractOptimizer {
 				(2 * precision * recall) / (precision + recall) : 0.0;
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
+		return runningAccuracy;
 	}
 	
-	private void validateQ(int[] instList) {
+	private double[] validateQ(int[] instList) {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
@@ -473,6 +488,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 				(2 * precision * recall) / (precision + recall) : 0.0;
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
+		return runningAccuracy;
 	}
 	
 	public void computeAccuracy(int[] instList) {
