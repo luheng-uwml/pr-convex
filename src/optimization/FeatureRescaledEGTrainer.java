@@ -361,6 +361,7 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 			int[] decoded = new int[length];
 			model.computeMarginals(nodeScores[i], edgeScores[i], 
 					nodeMarginals, edgeMarginals);
+			//model.posteriorDecoding(nodeMarginals, decoded);
 			model.posteriorDecoding(nodeMarginals, decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];

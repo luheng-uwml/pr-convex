@@ -143,7 +143,7 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 					"\tPARA::\t" + paraNorm +
 					"\tGRAPH::\t" + totalGraphPenalty);
 			
-			double[] devAcc = validate(devList);
+			double[] devAcc = predict(devList);
 			history.add(iteration, "objective", objective);
 			history.add(iteration, "stepsize", stepSize);
 			history.add(iteration, "para_norm", paraNorm);
@@ -328,12 +328,12 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 	}
 	
 
-	public void predict(int[] instList) {
+	public double[] predict(int[] instList) {
 		double[] theta = new double[numFeatures];
 		for (int i = 0; i < numFeatures; i++) {
 			theta[i] = parameters[i] * lambda1;
 		}
-		OptimizationHelper.testModel(features, eval, instList, labels,
+		return OptimizationHelper.testModel(features, eval, instList, labels,
 				predictions, theta);
 	}
 }

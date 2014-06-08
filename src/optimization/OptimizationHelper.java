@@ -78,7 +78,7 @@ public class OptimizationHelper {
 		}
 	}
 	
-	public static void testModel(SequentialFeatures features, Evaluator eval,
+	public static double[] testModel(SequentialFeatures features, Evaluator eval,
 			int[] instList, int[][] labels, int[][] predictions,
 			double[] parameters) {
 		double[] runningAccuracy = new double[3];
@@ -115,5 +115,6 @@ public class OptimizationHelper {
 				runningAccuracy[1] + "\t" + runningAccuracy[2]);
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
+		return runningAccuracy;
 	}
 }
