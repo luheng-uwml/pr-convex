@@ -78,6 +78,7 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 		entropy = new double[numInstances];
 		workList = new int[trainList.length + devList.length];
 		isLabeled = new boolean[numInstances];
+		predictions = new int[numInstances][];
 		numTrains = trainList.length;
 		for (int i = 0; i < trainList.length; i++) {
 			workList[i] = trainList[i];
@@ -91,6 +92,7 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 			int length = features.getInstanceLength(i);
 			nodeScores[i] = new double[length][numTargetStates];
 			ArrayHelper.deepFill(nodeScores[i], 0.0);
+			predictions[i] = new int[length];
 		}
 		ArrayHelper.deepFill(parameters, 0.0);
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
