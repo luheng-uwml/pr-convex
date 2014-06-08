@@ -143,12 +143,13 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 					"\tPARA::\t" + paraNorm +
 					"\tGRAPH::\t" + totalGraphPenalty);
 			
+			double[] devAcc = validate(devList);
 			history.add(iteration, "objective", objective);
 			history.add(iteration, "stepsize", stepSize);
 			history.add(iteration, "para_norm", paraNorm);
 			history.add(iteration, "lambda1", lambda1);
 			history.add(iteration, "graph_norm", totalGraphPenalty);
-			//history.add(iteration, "dev_f1", devAcc[2]);
+			history.add(iteration, "dev_f1", devAcc[2]);
 			
 			if (iteration % 5 == 4) {
 				validate(trainList);
@@ -298,7 +299,7 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 		}
 	}
 	
-	private void validate(int[] instList) {
+	private double[] validate(int[] instList) {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
@@ -323,6 +324,7 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 				(2 * precision * recall) / (precision + recall) : 0.0;
 		System.out.println("\tPREC::\t" + precision + "\tREC::\t" + recall +
 				"\tF1::\t" + f1);
+		return runningAccuracy;
 	}
 	
 

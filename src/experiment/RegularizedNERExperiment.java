@@ -45,7 +45,8 @@ public class RegularizedNERExperiment {
 		}
 		if (config.useDevA) {
 			allInstances.addAll(corpusDevA.instances);
-			if (!config.useToyData) {
+			// use devA as part of training here
+			if (config.useDevB) {
 				numTrains += corpusDevA.instances.size();
 			}
 		}
