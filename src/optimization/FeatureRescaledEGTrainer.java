@@ -43,7 +43,7 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 		this.trainList = trainList;
 		this.devList = devList;
 		this.eval = eval;
-		this.lambda1 = 1.0 / lambda1;
+		this.lambda1 = lambda1;
 		this.lambda2 = lambda2;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;

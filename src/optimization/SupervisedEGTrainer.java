@@ -45,7 +45,7 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 		this.trainList = trainList;
 		this.devList = devList;
 		this.eval = eval;
-		this.finalLambda1 = 1.0 / lambda1;
+		this.finalLambda1 = lambda1;
 		this.lambda1 = Math.min(minLambda, finalLambda1);
 		this.lambda2 = lambda2;
 		this.initialStepSize = initialStepSize;
