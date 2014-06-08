@@ -42,7 +42,7 @@ public class ExperimentConfig {
 	public int maxNumIterations = 1000;
 	
 	@Option(name = "-rand-seed", usage="")
-	public int randomSeed = 1000;
+	public int randomSeed = 12345;
 	
 	@Option(name = "-mat-path", usage="")
 	public String matFilePath = "./experiments/temp.mat";
