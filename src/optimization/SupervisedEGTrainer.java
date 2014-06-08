@@ -14,14 +14,13 @@ import graph.GraphRegularizer;
  * @author luheng
  *
  */
-public class SupervisedExponentiatedGradientDescent {
-	public int[][] predictions;
-	
+public class SupervisedEGTrainer implements AbstractOptimizer {
 	SequentialFeatures features;
 	SequentialInference model;
 	GraphRegularizer graph;
 	Evaluator eval;
-	int[][] labels;
+	OptimizationHistory history;
+	int[][] labels, predictions;
 	int[] trainList, devList;
 	double[] parameters, empiricalCounts, expectedCounts, trainRatio, logNorm,
 	         entropy;
@@ -35,7 +34,7 @@ public class SupervisedExponentiatedGradientDescent {
 	static final double stoppingCriterion = 1e-5, minLambda = 1e-2,
 						lambdaScale = 1.5; 
 	
-	public SupervisedExponentiatedGradientDescent(
+	public SupervisedEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double initialStepSize,
@@ -52,11 +51,17 @@ public class SupervisedExponentiatedGradientDescent {
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
-
+		this.history = new OptimizationHistory();
 		initializeDataStructure();
-		// trainRatio just for test use, remove later
-		initializeTrainRatio();
 		initializeObjective();
+	}
+	
+	public int[][] getPrediction() {
+		return predictions;
+	}
+	
+	public OptimizationHistory getOptimizationHistory() {
+		return history;
 	}
 	
 	private void initializeDataStructure() {
@@ -91,39 +96,6 @@ public class SupervisedExponentiatedGradientDescent {
 		ArrayHelper.deepFill(edgeScores, 0.0);
 		ArrayHelper.deepFill(entropy, 0.0);
 		ArrayHelper.deepFill(logNorm, 0.0);
-	}
-	
-	private void initializeTrainRatio() {
-		double[] trainFeatureCounts = new double[numFeatures];
-		double[] devFeatureCounts = new double[numFeatures];
-		Arrays.fill(trainFeatureCounts, 0);
-		Arrays.fill(devFeatureCounts, 0);
-		features.countFeatures(trainList, trainFeatureCounts);
-		features.countFeatures(devList, devFeatureCounts);
-		// features that are not in training data should be ignored 
-		for (int i = 0; i < numFeatures; i++) {
-			if (trainFeatureCounts[i] > 0) {
-				trainRatio[i] = 1.0 / trainFeatureCounts[i] *
-						(trainFeatureCounts[i] + devFeatureCounts[i]);
-			} else {
-				trainRatio[i] = 0.0;
-			}
-		}
-		System.out.println("bias-train:\t" + trainFeatureCounts[0] +
-						   "\tbias-dev:\t" + devFeatureCounts[0] +
-						   "\ttrain ratio:\t" + trainRatio[0]);
-		double avgRatio = 0, nnzRatio = 0;
-		for (int i = 0; i < numFeatures; i++) {
-			if (trainRatio[i] != 0) {
-				avgRatio += trainRatio[i];
-				nnzRatio += 1;
-			}
-		}
-		System.out.println("Averaged non-zero train ratio::\t" +
-				avgRatio / nnzRatio +
-				".\tNumber of non-zero train ratio elements::\t" +
-				(int) nnzRatio + " out of all " + numFeatures + " features.");
-	
 	}
 	
 	private void initializeObjective() {
@@ -161,19 +133,27 @@ public class SupervisedExponentiatedGradientDescent {
 				int instanceID = trainList[randomGen.nextInt(trainList.length)];
 				update(instanceID, stepSize);
 			}
+			double paraNorm = ArrayHelper.l2NormSquared(parameters);
 			System.out.println("ITER::\t" + iteration +
 					"\tSTEP:\t" + stepSize +
 					"\tOBJ::\t" + objective +
 					"\tIMPR::\t" + improvement +
 					"\tPREV::\t" + prevObjective +
 					"\tLAMBDA::\t" + lambda1 +
-					"\tPARA::\t" + ArrayHelper.l2NormSquared(parameters) +
+					"\tPARA::\t" + paraNorm +
 					"\tGRAPH::\t" + totalGraphPenalty);
+			
+			history.add(iteration, "objective", objective);
+			history.add(iteration, "stepsize", stepSize);
+			history.add(iteration, "para_norm", paraNorm);
+			history.add(iteration, "lambda1", lambda1);
+			history.add(iteration, "graph_norm", totalGraphPenalty);
+			//history.add(iteration, "dev_f1", devAcc[2]);
+			
 			if (iteration % 5 == 4) {
 				validate(trainList);
 				predict(devList);
 				computePrimalObjective();
-				//computeFeatureAgreement();
 			}
 			if (objective < prevObjective) {
 				stepSize *= 1.02;
@@ -353,48 +333,5 @@ public class SupervisedExponentiatedGradientDescent {
 		}
 		OptimizationHelper.testModel(features, eval, instList, labels,
 				predictions, theta);
-	}
-	
-	private void computeFeatureAgreement() {
-		double[] counts = new double[numFeatures];
-		double[] theta = new double[numFeatures];
-		for (int i = 0; i < numFeatures; i++) {
-			theta[i] = parameters[i] * lambda1;
-		}
-		
-		ArrayHelper.deepCopy(expectedCounts, counts);
-		double[][] edgeScores = new double[numStates][numStates];
-		features.computeEdgeScores(edgeScores, parameters);
-		for (int i : devList) {
-			int length = features.getInstanceLength(i);
-			double[][] nodeScores = new double[length][numTargetStates];
-			double[][][] tMarginals =
-					new double[length + 1][numStates][numStates];
-			features.computeNodeScores(i, nodeScores, parameters);
-			model.computeMarginals(nodeScores, edgeScores,  null, tMarginals);
-			OptimizationHelper.computeSoftCounts(features, i, tMarginals,
-					counts);
-		}
-		double totalDiff = 0;
-		double tr = 1.0 * (trainList.length + devList.length) / trainList.length;
-		double minDiff = Double.MAX_VALUE, maxDiff = Double.MIN_VALUE,
-			   avgDiff = 0;
-		for (int i = 0; i < numFeatures; i++) {
-			double diff = empiricalCounts[i] * trainRatio[i] - counts[i];
-			totalDiff += diff * diff;
-			minDiff = Math.min(diff * diff, minDiff);
-			maxDiff = Math.max(diff * diff, maxDiff);
-			avgDiff += diff * diff / numFeatures;
-			/*
-			if (diff * diff > 10000) {
-				System.out.println(i + "\t" + trainRatio[i] + "\t" +
-								   features.getFeatureName(i) + "\t" + diff +
-								   "\t" + empiricalCounts[i] + "\t" +
-								   counts[i] + "\t" +
-								   (1.0 * counts[i] / empiricalCounts[i]));
-			} */
-		}
-		System.out.println("gold diff:\t" + totalDiff + "\tmin:\t" + minDiff +
-					       "\tmax:\t" + maxDiff + "\tavg diff:\t" + avgDiff);
 	}
 }

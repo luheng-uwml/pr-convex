@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.kohsuke.args4j.CmdLineParser;
 
 import optimization.*;
+import data.CountDictionary;
 import data.Evaluator;
 import data.IOHelper;
 import data.NERCorpus;
@@ -17,48 +18,56 @@ import gnu.trove.list.array.TIntArrayList;
 public class RegularizedNERExperiment {
 	
 	private static void runRegularizedExperiment(ExperimentConfig config) {
+		/**
+		 * Prepare data
+		 */
+		System.out.println("Train:");
 		NERCorpus corpusTrain = new NERCorpus();
 		corpusTrain.readFromCoNLL2003("./data/eng.train");
-	
-		NERCorpus corpusDev = new NERCorpus(corpusTrain, false);
-		corpusDev.readFromCoNLL2003("./data/eng.testa");
 		corpusTrain.printCorpusInfo();
-		corpusDev.printCorpusInfo();
 		
-		int numAllTokens = 0;
-		for (NERSequence instance : corpusTrain.instances) {
-			numAllTokens += instance.length;
-		}
-		System.out.println("Number of all tokens:\t" + numAllTokens);
+		System.out.println("Dev A:");
+		NERCorpus corpusDevA = new NERCorpus(corpusTrain, false);
+		corpusDevA.readFromCoNLL2003("./data/eng.testa");
+		corpusDevA.printCorpusInfo();
 		
-		int numTrains = config.numLabeled > 0 ? config.numLabeled :
-			corpusTrain.size();
+		System.out.println("Dev B:");
+		NERCorpus corpusDevB = new NERCorpus(corpusTrain, false);
+		corpusDevB.readFromCoNLL2003("./data/eng.testb");
+		corpusDevB.printCorpusInfo();
 		
-		int numInstances = numTrains + corpusDev.size();
-		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
 		ArrayList<NERSequence> allInstances = new ArrayList<NERSequence>();
+		ArrayList<NERSequence> trainInstances = new ArrayList<NERSequence>();
+		int numTrains = 0;
+		if (!config.useToyData) {
+			allInstances.addAll(corpusTrain.instances);
+			numTrains = corpusTrain.instances.size();
+		}
+		if (config.useDevA) {
+			allInstances.addAll(corpusDevA.instances);
+			numTrains += corpusDevA.instances.size();
+		}
+		if (config.useDevB) {
+			allInstances.addAll(corpusDevB.instances);
+		}
+		// assign labels and instance IDs
+		int numInstances = allInstances.size();
+		int[][] labels = new int [numInstances][];
 		TIntArrayList trainList = new TIntArrayList(),
-					  devList = new TIntArrayList();
-		int[][] labels = new int[numInstances][];
-		// add from original TRAIN corpus
-		for (int i = 0; i < Math.min(numTrains, corpusTrain.size()); i++) {
-			int instanceID = allInstances.size();
-			allInstances.add(corpusTrain.instances.get(i));
-			labels[instanceID] = corpusTrain.instances.get(i).getLabels();
-			trainInstances.add(corpusTrain.instances.get(i));
-			trainList.add(instanceID);
+				  	  devList = new TIntArrayList();
+		for (int i = 0; i < numInstances; i++) {
+			if (i < numTrains) {
+				trainList.add(i);
+				trainInstances.add(allInstances.get(i));
+			} else {
+				devList.add(i);
+			}
+			labels[i] = allInstances.get(i).getLabels();
 		}
-		// add from original DEV corpus
-		for (int i = 0; i < Math.min(numInstances - numTrains,
-				corpusDev.size()); i++) {
-			int instanceID = allInstances.size();
-			allInstances.add(corpusDev.instances.get(i));
-			labels[instanceID] = corpusDev.instances.get(i).getLabels();
-			devList.add(instanceID);
-		}
-		System.out.println("num trains::\t" + numTrains +
-						   "\tnum all::\t" + numInstances);
-		
+		System.out.println("Number of training instances:\t" + numTrains +
+				  		   "Number of test instances:\t" +
+				  		   (numInstances - numTrains));
+		// extract features
 		NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
 				trainInstances, config.featureFreqCutOff);
 		extractor.printInfo();
@@ -66,55 +75,65 @@ public class RegularizedNERExperiment {
 				allInstances);
 		Evaluator eval = new Evaluator(corpusTrain);
 		
+		// get graph ready
 		GraphRegularizer graph = new DummyGraphRegularizer(
 				features.numTargetStates);
-		
 		if (config.useGraph) {
+			CountDictionary ngramDict = null;
+			SparseVector[] edges = null;
+			try {
+				ngramDict = IOHelper.loadCountDictionary(
+						config.ngramFilePath);
+				edges = IOHelper.loadSparseVectors(
+						config.graphFilePath);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			NGramFeatureExtractor ngramExtractor = new NGramFeatureExtractor(
-					corpusTrain, allInstances);
-			KNNGraphConstructor graphConstructor = new KNNGraphConstructor(
-					ngramExtractor.getNGramFeatures(), 10, true, 0.3, 8);
-			graphConstructor.run();
-			graph = new GraphRegularizer(ngramExtractor.getNGramIDs(),
-					graphConstructor.getEdgeList(), features.numTargetStates);
+					corpusTrain, allInstances, 3, true, ngramDict);
 			double goldPenalty = graph.computeTotalPenalty(labels);
 			System.out.println("gold penalty::\t" + goldPenalty);
+			graph = new GraphRegularizer(ngramExtractor.getNGramIDs(), edges,
+										 features.numTargetStates);
 			graph.validate(labels, corpusTrain.nerDict,
-					ngramExtractor.ngramDict);
+					       ngramExtractor.ngramDict);
 		}
-			
 		// here lambda = 1 / C
+		AbstractOptimizer optimizer = null;
 		if (config.sslTraining) {
-			RegularizedExponentiatedGradientDescent optimizer =
-					new RegularizedExponentiatedGradientDescent(features, graph,
-						labels, trainList.toArray(), devList.toArray(), eval,
-						config.lambda1, config.useGraph ? config.lambda2 : 0,
-						0.5, 500, 12345);
+			optimizer = new FeatureRescaledEGTrainer(
+						features, graph, labels, trainList.toArray(),
+						devList.toArray(), eval,
+						config.lambda1, config.lambda2,
+						config.initialLearningRate,
+						config.maxNumIterations,
+						config.randomSeed);
 			optimizer.optimize();
 			try {
 				IOHelper.saveOptimizationHistory(optimizer.history,
-						config.logFilePath);
+						config.matFilePath);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		} else if (config.pqlTraining) {
-			RegularizedExponentiatedGradientDescentPQ optimizer =
-					new RegularizedExponentiatedGradientDescentPQ(features, graph,
-						labels, trainList.toArray(), devList.toArray(), eval,
-						config.lambda1, config.useGraph ? config.lambda2 : 0, 1,
-						0.5, config.maxNumIterations, 12345);
+			PQEGTrainer optimizer =
+					new PQEGTrainer(features,
+						graph, labels, trainList.toArray(), devList.toArray(),
+						eval, config.lambda1, config.lambda2, 1.0,
+						config.initialLearningRate,
+						config.maxNumIterations, config.randomSeed);
 			optimizer.optimize();
 		}
 		else {
-			SupervisedExponentiatedGradientDescent optimizer =
-					new SupervisedExponentiatedGradientDescent(features, graph,
+			SupervisedEGTrainer optimizer =
+					new SupervisedEGTrainer(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
-						config.lambda1, config.useGraph ? config.lambda2 : 0,
-						0.5, 500, 12345);
+						config.lambda1, config.lambda2,
+						config.initialLearningRate, config.maxNumIterations,
+						config.randomSeed);
 			optimizer.optimize();
-			
 			try {
-				IOHelper.savePrediction(corpusDev, allInstances,
+				IOHelper.savePrediction(corpusTrain, allInstances,
 						devList.toArray(), optimizer.predictions,
 						config.predPath);
 			} catch (IOException e) {

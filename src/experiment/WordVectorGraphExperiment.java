@@ -2,7 +2,7 @@ package experiment;
 
 import java.util.ArrayList;
 
-import optimization.SupervisedExponentiatedGradientDescent;
+import optimization.SupervisedEGTrainer;
 import data.Evaluator;
 import data.NERCorpus;
 import data.NERSequence;
@@ -92,8 +92,8 @@ public class WordVectorGraphExperiment {
 		
 		// here lambda = 1 / C
 		Evaluator eval = new Evaluator(corpusTrain);
-		SupervisedExponentiatedGradientDescent optimizer =
-				new SupervisedExponentiatedGradientDescent(features, graph,
+		SupervisedEGTrainer optimizer =
+				new SupervisedEGTrainer(features, graph,
 						labels, trainList.toArray(), devList.toArray(), eval,
 						1, 0.5, 0.5, 500, 12345);
 		

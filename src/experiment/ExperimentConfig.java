@@ -6,16 +6,25 @@ import org.kohsuke.args4j.Option;
 
 public class ExperimentConfig {
 	@Option(name = "-num-labels", usage="")
-	public int numLabeled = 1000;
+	public int numLabeled = -1;
+	
+	@Option(name = "-use-deva", usage="")
+	public boolean useDevA;
+	
+	@Option(name = "-use-devb", usage="")
+	public boolean useDevB;
+	
+	@Option(name = "-toy", usage="")
+	public boolean useToyData;
 	
 	@Option(name = "-graph", usage="")
-	public boolean useGraph = false;
+	public boolean useGraph;
 	
 	@Option(name = "-ssl", usage="")
-	public boolean sslTraining = false;
+	public boolean sslTraining;
 	
 	@Option(name = "-pq", usage="") // the dummy varaible "q" version
-	public boolean pqlTraining = true;
+	public boolean pqlTraining;
 	
 	@Option(name = "-min-ff", usage="")
 	public int featureFreqCutOff = 1;
@@ -26,14 +35,26 @@ public class ExperimentConfig {
 	@Option(name = "-lambda2", usage="")
 	public double lambda2 = 1;
 	
+	@Option(name = "-init-eta", usage="")
+	public double initialLearningRate = 0.5;
+	
 	@Option(name = "-max-iters", usage="")
 	public int maxNumIterations = 1000;
 	
-	@Option(name = "-matpath", usage="")
-	public String logFilePath = "./experiments/temp.mat";
+	@Option(name = "-rand-seed", usage="")
+	public int randomSeed = 1000;
+	
+	@Option(name = "-mat-path", usage="")
+	public String matFilePath = "./experiments/temp.mat";
 	
 	@Option(name = "-pred-path", usage="")
 	public String predPath = "./experiments/temp.pred";
+	
+	@Option(name = "-ngram-path", usage="")
+	public String ngramFilePath = "temp.ngrams";
+	
+	@Option(name = "-graph-path", usage="")
+	public String graphFilePath = "temp.edges";
 	
 	public ExperimentConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);

@@ -12,12 +12,13 @@ import graph.GraphRegularizer;
  * @author luheng
  *
  */
-public class RegularizedExponentiatedGradientDescentPQ {
+public class PQEGTrainer implements AbstractOptimizer {
 	SequentialFeatures features;
 	SequentialInference model;
 	GraphRegularizer graph;
+	OptimizationHistory history;
 	Evaluator eval;
-	int[][] labels;
+	int[][] labels, predictions;
 	int[] trainList, devList, workList;
 	boolean[] isLabeled;
 	double[] parameters, empiricalCounts, expectedCounts, pLogNorm, pEntropy,
@@ -32,7 +33,7 @@ public class RegularizedExponentiatedGradientDescentPQ {
 	static final double stoppingCriterion = 1e-5;
 	static final boolean maxEntQ = true;
 	
-	public RegularizedExponentiatedGradientDescentPQ(
+	public PQEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double unlabeledWeight,
@@ -49,6 +50,7 @@ public class RegularizedExponentiatedGradientDescentPQ {
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
+		this.history = new OptimizationHistory();
 		initializeDataStructure();
 		initializeObjective();
 	}
@@ -72,7 +74,8 @@ public class RegularizedExponentiatedGradientDescentPQ {
 		pEntropy = new double[numInstances];
 		qEntropy = new double[numInstances];
 		workList = new int[trainList.length + devList.length];
-		isLabeled = new boolean[numInstances ];
+		isLabeled = new boolean[numInstances];
+		predictions = new int[numInstances][];
 		numTrains = trainList.length;
 		for (int i = 0; i < trainList.length; i++) {
 			workList[i] = trainList[i];
@@ -89,7 +92,8 @@ public class RegularizedExponentiatedGradientDescentPQ {
 			if (!isLabeled[i]) {
 				qNodes[i] = new double[length][numTargetStates];
 				ArrayHelper.deepFill(qNodes[i], 0.0);
-			}			
+			}
+			predictions[i] = new int[length];
 		}
 		ArrayHelper.deepFill(parameters, 0.0);
 		ArrayHelper.deepFill(empiricalCounts, 0.0);
@@ -97,6 +101,14 @@ public class RegularizedExponentiatedGradientDescentPQ {
 		ArrayHelper.deepFill(nodeCounts, 0.0);
 		ArrayHelper.deepFill(pEdges, 0.0);
 		ArrayHelper.deepFill(qEdges, 0.0);
+	}
+	
+	public OptimizationHistory getOptimizationHistory() {
+		return history;
+	}
+	
+	public int[][] getPrediction() {
+		return predictions;
 	}
 	
 	private void initializeObjective() {
@@ -468,24 +480,7 @@ public class RegularizedExponentiatedGradientDescentPQ {
 		for (int i = 0; i < numFeatures; i++) {
 			theta[i] = parameters[i] * lambda1;
 		}
-		OptimizationHelper.testModel(features, eval, instList, labels, null,
-				theta);
+		OptimizationHelper.testModel(features, eval, instList, labels,
+				predictions, theta);
 	}
-	
-	// for sanity check
-	/*
-	private void computeDesiredObjective() {
-		double desiredObjective = 0;
-		for (int i : trainList) {
-			desiredObjective -= pEntropy[i];
-		}
-		for (int i : devList) {
-			desiredObjective -= pEntropy[i] * 2;
-		}
-		for (int i = 0; i < numFeatures; i++) {
-			double diff = empiricalCounts[i] - expectedCounts[i]; 
-			desiredObjective += diff * diff;
-		}
-		System.out.println("desired objective:\t" + desiredObjective);
-	*/
 }

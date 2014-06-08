@@ -13,14 +13,13 @@ import graph.GraphRegularizer;
  * @author luheng
  *
  */
-public class RegularizedExponentiatedGradientDescent {
-	public OptimizationHistory history;
-	
+public class FeatureRescaledEGTrainer implements AbstractOptimizer {
+	OptimizationHistory history;
 	SequentialFeatures features;
 	SequentialInference model;
 	GraphRegularizer graph;
 	Evaluator eval;
-	int[][] labels;
+	int[][] labels, predictions;
 	int[] trainList, devList, workList;
 	boolean[] isLabeled;
 	double[] parameters, empiricalCounts, labeledCounts, unlabeledCounts,
@@ -33,7 +32,7 @@ public class RegularizedExponentiatedGradientDescent {
 	Random randomGen;
 	static final double stoppingCriterion = 1e-5;
 	
-	public RegularizedExponentiatedGradientDescent(
+	public FeatureRescaledEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double initialStepSize,
@@ -53,6 +52,14 @@ public class RegularizedExponentiatedGradientDescent {
 		initialize();
 	}
 	
+	public OptimizationHistory getOptimizationHistory() {
+		return history;
+	}
+	
+	public int[][] getPrediction() {
+		return predictions;
+	}
+	
 	private void initialize() {
 		numInstances = features.numInstances;
 		numFeatures = features.numAllFeatures;
@@ -69,9 +76,8 @@ public class RegularizedExponentiatedGradientDescent {
 		nodeScores = new double[numInstances][][];
 		logNorm = new double[numInstances];
 		entropy = new double[numInstances];
-
 		workList = new int[trainList.length + devList.length];
-		isLabeled = new boolean[numInstances ];
+		isLabeled = new boolean[numInstances];
 		numTrains = trainList.length;
 		for (int i = 0; i < trainList.length; i++) {
 			workList[i] = trainList[i];
@@ -376,7 +382,7 @@ public class RegularizedExponentiatedGradientDescent {
 		for (int i = 0; i < numFeatures; i++) {
 			theta[i] = parameters[i] * lambda1;
 		}
-		OptimizationHelper.testModel(features, eval, instList, labels, null,
-				theta);
+		OptimizationHelper.testModel(features, eval, instList, labels,
+				predictions, theta);
 	}
 }

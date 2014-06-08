@@ -3,8 +3,8 @@ package experiment;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import optimization.RegularizedExponentiatedGradientDescent;
-import optimization.SupervisedExponentiatedGradientDescent;
+import optimization.FeatureRescaledEGTrainer;
+import optimization.SupervisedEGTrainer;
 import data.CountDictionary;
 import data.Evaluator;
 import data.IOHelper;
@@ -152,8 +152,8 @@ public class GraphBuildingExperiment {
 		
 		graph.validate(labels, corpusTrain.nerDict, ngramDict);
 		
-		SupervisedExponentiatedGradientDescent optimizer =
-				new SupervisedExponentiatedGradientDescent(features, graph,
+		SupervisedEGTrainer optimizer =
+				new SupervisedEGTrainer(features, graph,
 					labels, trainList.toArray(), devList.toArray(), eval,
 					1, 1, 0.5, 500, 12345);
 		optimizer.optimize();
