@@ -354,17 +354,10 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
-		int numStates = features.numStates;
 		for (int i : instList) {
 			int length = features.getInstanceLength(i);
-			double[][] nodeMarginals = new double[length][numStates];
-			double[][][] edgeMarginals =
-					new double[length + 1][numStates][numStates];
 			int[] decoded = new int[length];
-			model.computeMarginals(nodeScores[i], edgeScores[i], 
-					nodeMarginals, edgeMarginals);
-			//model.posteriorDecoding(nodeMarginals, decoded);
-			model.posteriorDecoding(nodeMarginals, decoded);
+			model.viterbiDecoding(nodeScores[i], edgeScores[i], decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];
 			runningAccuracy[1] += result[1];

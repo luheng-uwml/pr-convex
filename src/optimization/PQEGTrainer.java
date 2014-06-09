@@ -168,8 +168,9 @@ public class PQEGTrainer implements AbstractOptimizer {
 	
 	public void optimize() {
 		double lambda1Final = lambda1;
-		lambda1 = Math.min(0.1, lambda1Final);
-		objective += 0.5 * (lambda1 - lambda1Final) * ArrayHelper.l2NormSquared(parameters);
+		lambda1 = Math.min(1.0, lambda1Final);
+		objective += 0.5 * (lambda1 - lambda1Final) *
+				ArrayHelper.l2NormSquared(parameters);
 		double stepSize = initialStepSize;
 		double prevObjective = objective;
 		
@@ -226,7 +227,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 					"\tPARA::\t" + paraNorm +
 					"\tGRAPH::\t" + totalGraphPenalty);
 			
-			double[] devAcc = validateQ(devList);
+			double[] devAcc = validateP(devList);
 			history.add(iteration, "objective", objective);
 			history.add(iteration, "stepsize", stepSize);
 			history.add(iteration, "para_norm", paraNorm);
@@ -246,8 +247,8 @@ public class PQEGTrainer implements AbstractOptimizer {
 			} else {
 				stepSize *= 0.5;
 			}
-			improvement =Math.abs((prevObjective - objective) / prevObjective);
-			if (improvement < 1e-3) {
+			improvement = Math.abs((prevObjective - objective) / prevObjective);
+			if (improvement < 1e-3 && lambda1 < lambda1Final) {
 				double oldLambda = lambda1;
 				lambda1 = Math.min(lambda1 * 1.5, lambda1Final);
 				objective += 0.5 * (lambda1 - oldLambda) *
@@ -404,7 +405,8 @@ public class PQEGTrainer implements AbstractOptimizer {
 	private void computeGradientQ(int instanceID, double[][] nodeGradient,
 			double[][] edgeGradient) {
 		int length = features.getInstanceLength(instanceID);
-		double w0 = maxEntQ ? 1.0 : 0, w1 = unlabeledWeight * lambda1;
+		double w0 = maxEntQ ? 1.0 : 0;
+		double w1 = unlabeledWeight * lambda1;
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
 				edgeGradient[i][j] = w0 * qEdges[instanceID][i][j] +
@@ -440,16 +442,17 @@ public class PQEGTrainer implements AbstractOptimizer {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
-		int numStates = features.numStates;
 		for (int i : instList) {
 			int length = features.getInstanceLength(i);
-			double[][] nodeMarginals = new double[length][numStates];
+			int[] decoded = new int[length];
+			/*double[][] nodeMarginals = new double[length][numStates];
 			double[][][] edgeMarginals =
 					new double[length + 1][numStates][numStates];
-			int[] decoded = new int[length];
 			model.computeMarginals(pNodes[i], pEdges[i], 
 					nodeMarginals, edgeMarginals);
 			model.posteriorDecoding(nodeMarginals, decoded);
+			*/
+			model.viterbiDecoding(pNodes[i], pEdges[i], decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];
 			runningAccuracy[1] += result[1];
@@ -468,16 +471,10 @@ public class PQEGTrainer implements AbstractOptimizer {
 		double[] runningAccuracy = new double[3];
 		ArrayHelper.deepFill(runningAccuracy, 0.0);
 		// compute objective and likelihood
-		int numStates = features.numStates;
 		for (int i : instList) {
 			int length = features.getInstanceLength(i);
-			double[][] nodeMarginals = new double[length][numStates];
-			double[][][] edgeMarginals =
-					new double[length + 1][numStates][numStates];
 			int[] decoded = new int[length];
-			model.computeMarginals(qNodes[i], qEdges[i], 
-					nodeMarginals, edgeMarginals);
-			model.posteriorDecoding(nodeMarginals, decoded);
+			model.viterbiDecoding(qNodes[i], qEdges[i], decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];
 			runningAccuracy[1] += result[1];
