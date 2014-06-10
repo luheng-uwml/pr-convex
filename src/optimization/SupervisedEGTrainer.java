@@ -31,7 +31,7 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
-	static final double stoppingCriterion = 1e-5, minLambda = 1e-2,
+	static final double stoppingCriterion = 1e-5, minLambda = 1,
 						lambdaScale = 1.5; 
 	
 	public SupervisedEGTrainer(

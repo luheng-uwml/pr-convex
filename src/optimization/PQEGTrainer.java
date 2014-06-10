@@ -31,7 +31,6 @@ public class PQEGTrainer implements AbstractOptimizer {
 		numTargetStates;
 	Random randomGen;
 	static final double stoppingCriterion = 1e-5;
-	static final boolean maxEntQ = true;
 	
 	public PQEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
@@ -168,7 +167,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 	
 	public void optimize() {
 		double lambda1Final = lambda1;
-		lambda1 = Math.min(1.0, lambda1Final);
+		lambda1 = Math.min(1, lambda1Final);
 		objective += 0.5 * (lambda1 - lambda1Final) *
 				ArrayHelper.l2NormSquared(parameters);
 		double stepSize = initialStepSize;
@@ -264,7 +263,6 @@ public class PQEGTrainer implements AbstractOptimizer {
 		validateP(devList);
 		validateQ(devList);
 		computeAccuracy(devList);
-		computePrimalObjective();
 	}
 	
 	private void updatePrimalParameters() {
@@ -305,9 +303,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 					tNodeGradient = new double[length][numTargetStates];
 		double tPenalty;
 		
-		if (maxEntQ) {
-			objective += qEntropy[instanceID];
-		}
+		objective += qEntropy[instanceID];
 		objective -= 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
 		tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
 		totalGraphPenalty -= tPenalty;
@@ -330,10 +326,9 @@ public class PQEGTrainer implements AbstractOptimizer {
 		OptimizationHelper.computeSoftCounts(graph, instanceID, tMarginals,
 				nodeCounts, 1);
 		updatePrimalParameters();
-		if (maxEntQ) {
-			updateEntropy(instanceID, tMarginals, 'Q');
-			objective -= qEntropy[instanceID];
-		}
+		updateEntropy(instanceID, tMarginals, 'Q');
+		
+		objective -= qEntropy[instanceID];
 		objective += 0.5 * lambda1 * ArrayHelper.l2NormSquared(parameters);
 		tPenalty = graph.computeTotalPenalty(instanceID, nodeCounts);
 		totalGraphPenalty += tPenalty;
@@ -347,7 +342,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 					pEdges[instanceID], null, marginals);
 			pEntropy[instanceID] = model.computeEntropy(pNodes[instanceID],
 					pEdges[instanceID], marginals, pLogNorm[instanceID]);
-		} else if (maxEntQ) {
+		} else {
 			qLogNorm[instanceID] = model.computeMarginals(qNodes[instanceID],
 					qEdges[instanceID], null, marginals);
 			qEntropy[instanceID] = model.computeEntropy(qNodes[instanceID],
@@ -405,17 +400,16 @@ public class PQEGTrainer implements AbstractOptimizer {
 	private void computeGradientQ(int instanceID, double[][] nodeGradient,
 			double[][] edgeGradient) {
 		int length = features.getInstanceLength(instanceID);
-		double w0 = maxEntQ ? 1.0 : 0;
 		double w1 = unlabeledWeight * lambda1;
 		for (int i = 0; i < numStates; i++) {
 			for (int j = 0; j < numStates; j++) {
-				edgeGradient[i][j] = w0 * qEdges[instanceID][i][j] +
+				edgeGradient[i][j] = qEdges[instanceID][i][j] +
 					w1 * features.computeEdgeScore(i, j, parameters);
 			}
 		}
 		for (int i = 0; i < length; i++) {
 			for (int j = 0; j < numTargetStates; j++) {
-				nodeGradient[i][j] = w0 * qNodes[instanceID][i][j] +
+				nodeGradient[i][j] = qNodes[instanceID][i][j] +
 					w1 * features.computeNodeScore(instanceID, i, j, parameters) -
 					lambda2 * graph.computePenalty(instanceID, i, nodeCounts[j]);
 			}
@@ -445,13 +439,6 @@ public class PQEGTrainer implements AbstractOptimizer {
 		for (int i : instList) {
 			int length = features.getInstanceLength(i);
 			int[] decoded = new int[length];
-			/*double[][] nodeMarginals = new double[length][numStates];
-			double[][][] edgeMarginals =
-					new double[length + 1][numStates][numStates];
-			model.computeMarginals(pNodes[i], pEdges[i], 
-					nodeMarginals, edgeMarginals);
-			model.posteriorDecoding(nodeMarginals, decoded);
-			*/
 			model.viterbiDecoding(pNodes[i], pEdges[i], decoded);
 			int[] result = eval.evaluate(labels[i], decoded);
 			runningAccuracy[0] += result[0];
