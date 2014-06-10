@@ -58,6 +58,9 @@ public class ExperimentConfig {
 	
 	@Option(name = "-graph-path", usage="")
 	public String graphFilePath = "temp.edges";
+
+	@Option(name = "-stop", usage="")
+	public double stoppingCriterion = 1e-6;
 	
 	public ExperimentConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);

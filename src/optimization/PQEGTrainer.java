@@ -30,14 +30,14 @@ public class PQEGTrainer implements AbstractOptimizer {
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
-	static final double stoppingCriterion = 1e-5;
+	double stoppingCriterion;
 	
 	public PQEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double unlabeledWeight,
 			double initialStepSize, int maxNumIterations,
-			int warmStartIterations, int randomSeed) {
+			int warmStartIterations, double stoppingCriterion, int randomSeed) {
 		this.features = features;
 		this.graph = graph;
 		this.labels = labels;
@@ -50,6 +50,7 @@ public class PQEGTrainer implements AbstractOptimizer {
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
 		this.randomGen = new Random(randomSeed);
+		this.stoppingCriterion = stoppingCriterion;
 		this.history = new OptimizationHistory();
 		initializeDataStructure();
 		initializeObjective();

@@ -109,6 +109,7 @@ public class RegularizedNERExperiment {
 						config.lambda1, config.lambda2,
 						config.initialLearningRate,
 						config.maxNumIterations,
+						config.stoppingCriterion,
 						config.randomSeed);
 		} else if (config.pqlTraining) {
 			optimizer = new PQEGTrainer(features,
@@ -116,6 +117,7 @@ public class RegularizedNERExperiment {
 						eval, config.lambda1, config.lambda2, 1.0,
 						config.initialLearningRate,
 						config.maxNumIterations, config.warmStartIterations,
+						config.stoppingCriterion,
 						config.randomSeed);
 		}
 		else {
@@ -123,6 +125,7 @@ public class RegularizedNERExperiment {
 						labels, trainList.toArray(), devList.toArray(), eval,
 						config.lambda1, config.lambda2,
 						config.initialLearningRate, config.maxNumIterations,
+						config.stoppingCriterion,
 						config.randomSeed);
 		}
 		optimizer.optimize();

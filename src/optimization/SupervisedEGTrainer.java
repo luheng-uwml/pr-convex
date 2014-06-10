@@ -31,14 +31,14 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
-	static final double stoppingCriterion = 1e-5, minLambda = 1,
-						lambdaScale = 1.5; 
+	double stoppingCriterion;
+	static final double minLambda = 1, lambdaScale = 1.5; 
 	
 	public SupervisedEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
 			int[][] labels, int[] trainList, int[] devList, Evaluator eval,
 			double lambda1, double lambda2, double initialStepSize,
-			int maxNumIterations, int randomSeed) {
+			int maxNumIterations, double stoppingCriterion, int randomSeed) {
 		this.features = features;
 		this.graph = graph;
 		this.labels = labels;
@@ -50,6 +50,7 @@ public class SupervisedEGTrainer implements AbstractOptimizer {
 		this.lambda2 = lambda2;
 		this.initialStepSize = initialStepSize;
 		this.maxNumIterations = maxNumIterations;
+		this.stoppingCriterion = stoppingCriterion;
 		this.randomGen = new Random(randomSeed);
 		this.history = new OptimizationHistory();
 		initializeDataStructure();

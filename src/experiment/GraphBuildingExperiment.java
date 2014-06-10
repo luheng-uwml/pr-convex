@@ -155,7 +155,7 @@ public class GraphBuildingExperiment {
 		SupervisedEGTrainer optimizer =
 				new SupervisedEGTrainer(features, graph,
 					labels, trainList.toArray(), devList.toArray(), eval,
-					1, 1, 0.5, 500, 12345);
+					1, 1, 0.5, 500, 1e-5, 12345);
 		optimizer.optimize();
 	}
 	
