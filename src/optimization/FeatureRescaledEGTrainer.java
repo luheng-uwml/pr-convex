@@ -30,7 +30,7 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 	int numTrains, numInstances, numFeatures, maxNumIterations, numStates,
 		numTargetStates;
 	Random randomGen;
-	static final double stoppingCriterion = 1e-5;
+	static final double stoppingCriterion = 1e-6;
 	
 	public FeatureRescaledEGTrainer(
 			SequentialFeatures features, GraphRegularizer graph,
@@ -118,8 +118,6 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 			if (trainFeatureCounts[i] > 0) {
 				trainRatio[i] = 1.0 / trainFeatureCounts[i] *
 						(trainFeatureCounts[i] + devFeatureCounts[i]);
-				//trainRatio[i] = 1.0 / trainList.length *
-				//		(trainList.length + devList.length);
 			} else {
 				trainRatio[i] = 0.0;
 			}
@@ -219,7 +217,6 @@ public class FeatureRescaledEGTrainer implements AbstractOptimizer {
 			if (trainRatio[i] > 0) {
 				parameters[i] = trainRatio[i] * empiricalCounts[i] - 
 								(labeledCounts[i] + unlabeledCounts[i]);
-				//parameters[i] = empiricalCounts[i] - labeledCounts[i];
 			} else {
 				parameters[i] = 0.0;
 			}
