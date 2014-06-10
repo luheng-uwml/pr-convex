@@ -1,6 +1,5 @@
 package optimization;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import inference.SequentialInference;

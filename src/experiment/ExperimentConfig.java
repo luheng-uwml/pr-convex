@@ -62,6 +62,10 @@ public class ExperimentConfig {
 	@Option(name = "-stop", usage="")
 	public double stoppingCriterion = 1e-6;
 	
+	public void printSelf() {
+		System.out.println("Stopping:\t" + this.stoppingCriterion);
+	}
+	
 	public ExperimentConfig(String[] args) {
 		CmdLineParser parser = new CmdLineParser(this);
 		parser.setUsageWidth(120);
@@ -70,5 +74,6 @@ public class ExperimentConfig {
 		} catch (CmdLineException e) {
 			e.printStackTrace();
 		}
+		printSelf();
 	}
 }
