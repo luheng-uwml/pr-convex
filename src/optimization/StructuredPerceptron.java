@@ -2,6 +2,7 @@ package optimization;
 
 import java.util.*;
 
+import data.NERSequence;
 import inference.LatticeHelper;
 import inference.SequentialInference;
 import data.Evaluator;
@@ -15,7 +16,7 @@ public class StructuredPerceptron {
     int[] trainList, devList;
     double[] parameters, avgParameters, runningAccuracy;
     double initialStepSize, stepSize;
-    int numFeatures, maxNumIterations, numStates, numTargetStates;
+    int numFeatures, maxNumIterations, numStates, numTargetStates, numUpdates;
     Random randomGen;
 
     public StructuredPerceptron(SequentialFeatures features, int[][] labels,
@@ -43,11 +44,11 @@ public class StructuredPerceptron {
         ArrayHelper.deepFill(parameters, 0.0);
         ArrayHelper.deepFill(avgParameters, 0.0);
         runningAccuracy = new double[3]; // Precision, Recall, F1
+        numUpdates = 0;
     }
 
     public void optimize() {
         stepSize = initialStepSize;
-        int numUpdates = 0;
         List<Integer> trainIds = new ArrayList<>();
         for (int tid : trainList) {
             trainIds.add(tid);
@@ -98,7 +99,7 @@ public class StructuredPerceptron {
                 double f1 = (precision + recall > 0) ? (2 * precision * recall) / (precision + recall) : 0.0;
 
 
-                if (iteration % 100 == 99) {
+                if (numUpdates % 1000 == 999) {
                     System.out.println("ITER::\t" + iteration + "\tPARAM::\t" + ArrayHelper.l2NormSquared(parameters)
                             + "\tPREC::\t" + precision + "\tREC::\t" + recall + "\tF1::\t" + f1);
                     double[] weights = new double[numFeatures];
@@ -111,4 +112,25 @@ public class StructuredPerceptron {
         }
     }
 
+    public int[][] getPredictions(SequentialFeatures features, int[] instList) {
+        double[] weights = new double[numFeatures];
+        for (int i = 0; i < numFeatures; i++) {
+            weights[i] = avgParameters[i] / numUpdates;
+        }
+        int[][] predictions = new int[instList.length][];
+        int numStates = features.numStates;
+        int numTargetStates = features.numTargetStates;
+        SequentialInference model= new SequentialInference(1000, numStates);
+        double[][] edgeScores = new double[numStates][numStates];
+        features.computeEdgeScores(edgeScores, weights);
+        for (int i = 0; i < instList.length; i++) {
+            int instId = instList[i];
+            int length = features.getInstanceLength(instId);
+            double[][] nodeScores = new double[length][numTargetStates];
+            predictions[i] = new int[length];
+            features.computeNodeScores(instId, nodeScores, weights);
+            model.viterbiDecoding(nodeScores, edgeScores, predictions[i]);
+        }
+        return predictions;
+    }
 }

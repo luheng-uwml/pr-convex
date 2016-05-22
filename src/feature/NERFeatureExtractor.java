@@ -33,8 +33,7 @@ public class NERFeatureExtractor {
 				if (i == startStateID || j == endStateID) {
 					continue;
 				}
-				edgeFeatures[i][j] = addEdgeFeatures(
-						stateDict.getString(i), stateDict.getString(j));
+				edgeFeatures[i][j] = addEdgeFeatures(stateDict.getString(i), stateDict.getString(j));
 			}
 		}
 		numEdgeFeatures = edgeFeatureDict.size();
@@ -44,29 +43,23 @@ public class NERFeatureExtractor {
 		CountDictionary rawFeatureDict = new CountDictionary();
 		for (NERSequence instance : instances) {
 			for (int i = 0; i < instance.length; i++) {
-				// precompute = true
 				addNodeFeatures(instance, i, rawFeatureDict, true);
 			}
 		}
-		nodeFeatureDict = new CountDictionary(rawFeatureDict,
-				minFeatureFrequency);
+		nodeFeatureDict = new CountDictionary(rawFeatureDict, minFeatureFrequency);
 		numNodeFeatures = nodeFeatureDict.size();
 	}
 	
-	public SequentialFeatures getSequentialFeatures(
-			ArrayList<NERSequence> instances) {
+	public SequentialFeatures getSequentialFeatures(ArrayList<NERSequence> instances) {
 		nodeFeatures = new SparseVector[instances.size()][];
 		for (int i = 0; i < instances.size(); i++) {
 			NERSequence instance = instances.get(i);
 			nodeFeatures[i] = new SparseVector[instance.length];
 			for (int j = 0; j < instance.length; j++) {
-				// precompute = false
-				nodeFeatures[i][j] =
-					addNodeFeatures(instance, j, nodeFeatureDict, false); 
+				nodeFeatures[i][j] = addNodeFeatures(instance, j, nodeFeatureDict, false);
 			}
 		}
-		return new SequentialFeatures(nodeFeatures, edgeFeatures,
-				numNodeFeatures, numEdgeFeatures, nodeFeatureDict,
+		return new SequentialFeatures(nodeFeatures, edgeFeatures, numNodeFeatures, numEdgeFeatures, nodeFeatureDict,
 				edgeFeatureDict, stateDict);
 	}
 	
@@ -79,12 +72,10 @@ public class NERFeatureExtractor {
 		fv0.add(edgeFeatureDict.addString("BIAS"), 1);
 		fv0.add(edgeFeatureDict.addString("NER=" + state), 1);
 		fv0.add(edgeFeatureDict.addString("NER_prev=" + prevState), 1);
-		fv0.add(edgeFeatureDict.addString(
-				"NER_bi=" +state + "_" + prevState), 1);
+		fv0.add(edgeFeatureDict.addString("NER_bi=" +state + "_" + prevState), 1);
 		fv0.add(edgeFeatureDict.addString("BIO=" + stateRaw), 1);
 		fv0.add(edgeFeatureDict.addString("BIO_prev=" + prevStateRaw), 1);
-		fv0.add(edgeFeatureDict.addString(
-				"BIO_bi=" +stateRaw + "_" + prevStateRaw), 1);
+		fv0.add(edgeFeatureDict.addString("BIO_bi=" +stateRaw + "_" + prevStateRaw), 1);
 		return new SparseVector(fv0);
 	}
 	
@@ -106,8 +97,7 @@ public class NERFeatureExtractor {
 	 *   has_number
 	 *   is_punctuation
 	 */
-	private SparseVector addNodeFeatures(NERSequence instance, int position,
-			CountDictionary featDict, boolean precompute) {
+	private SparseVector addNodeFeatures(NERSequence instance, int position, CountDictionary featDict, boolean precompute) {
 		DynamicSparseVector fvec = new DynamicSparseVector();
 		String token = instance.getToken(position);
 		String posTag = instance.getPosTag(position);
@@ -115,21 +105,16 @@ public class NERFeatureExtractor {
 		String ltok = token.toLowerCase();
 		int tlen = token.length();
 		addFeature("TOK=" + ltok, fvec, featDict, precompute);
-		addFeature("TOK_POS=" + ltok + "_" + posTag, fvec, featDict,
-				precompute);
-		addFeature("TOK_CHK=" + ltok + "_" + chunkTag, fvec, featDict,
-				precompute);
+		addFeature("TOK_POS=" + ltok + "_" + posTag, fvec, featDict, precompute);
+		addFeature("TOK_CHK=" + ltok + "_" + chunkTag, fvec, featDict, precompute);
 		if (tlen > 2) {
-			addFeature("SUF2=" + ltok.substring(tlen - 2), fvec,
-					featDict, precompute);
+			addFeature("SUF2=" + ltok.substring(tlen - 2), fvec, featDict, precompute);
 		}
 		if (tlen > 3) {
-			addFeature("SUF3=" + ltok.substring(tlen - 3), fvec,
-					featDict, precompute);
+			addFeature("SUF3=" + ltok.substring(tlen - 3), fvec, featDict, precompute);
 		}
 		if (tlen > 4) {
-			addFeature("SUF4=" + ltok.substring(tlen - 4), fvec,
-					featDict, precompute);
+			addFeature("SUF4=" + ltok.substring(tlen - 4), fvec, featDict, precompute);
 		}
 		if (!token.startsWith(ltok)) {
 			addFeature("IS_CAP", fvec, featDict, precompute);
@@ -142,8 +127,7 @@ public class NERFeatureExtractor {
 		}
 		addFeature("POS=" + posTag, fvec, featDict, precompute);
 		addFeature("CHK=" + chunkTag, fvec, featDict, precompute);
-		addFeature("POS_CHK=" + posTag + "_" + chunkTag, fvec, featDict,
-				precompute);
+		addFeature("POS_CHK=" + posTag + "_" + chunkTag, fvec, featDict, precompute);
 		// ngram tags
 		if (position > 0) {
 			String tokL = instance.getToken(position - 1);
@@ -161,10 +145,8 @@ public class NERFeatureExtractor {
 			}
 			addFeature("POSL=" + posL, fvec, featDict, precompute);
 			addFeature("CHKL=" + chunkL, fvec, featDict, precompute);
-			addFeature("POS+L=" + posL + "," + posTag, fvec, featDict,
-					precompute);
-			addFeature("CHK+L=" + chunkL + "," + chunkTag, fvec, featDict,
-					precompute);
+			addFeature("POS+L=" + posL + "," + posTag, fvec, featDict, precompute);
+			addFeature("CHK+L=" + chunkL + "," + chunkTag, fvec, featDict, precompute);
 		}
 		if (position < instance.length - 1) {
 			String tokR = instance.getToken(position + 1);
@@ -182,10 +164,8 @@ public class NERFeatureExtractor {
 			}
 			addFeature("POSR=" + posR, fvec, featDict, precompute);
 			addFeature("CHKR=" + chunkR, fvec, featDict, precompute);
-			addFeature("POS+R=" + posTag + ", " + posR, fvec, featDict,
-					precompute);
-			addFeature("CHK+R=" + chunkTag + ", " + chunkR, fvec, featDict,
-					precompute);
+			addFeature("POS+R=" + posTag + ", " + posR, fvec, featDict, precompute);
+			addFeature("CHK+R=" + chunkTag + ", " + chunkR, fvec, featDict, precompute);
 		}
 		return new SparseVector(fvec);
 	}
@@ -194,7 +174,6 @@ public class NERFeatureExtractor {
 		System.out.println("Number of states\t" + numStates);
 		System.out.println("Dummy start state:\t" + startStateID);
 		System.out.println("Dummy end state:\t" + endStateID);
-		System.out.println("Number of features\t" +
-			(nodeFeatureDict.size() * numStates + edgeFeatureDict.size()));
+		System.out.println("Number of features\t" + (nodeFeatureDict.size() * numStates + edgeFeatureDict.size()));
 	}
 }
