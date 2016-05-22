@@ -7,6 +7,7 @@ import feature.NERFeatureExtractor;
 import feature.SequentialFeatures;
 import gnu.trove.list.array.TIntArrayList;
 import optimization.OnlineExponentiatedGradientDescent;
+import optimization.StructuredPerceptron;
 
 import java.util.ArrayList;
 
@@ -48,19 +49,13 @@ public class StructuredPerceptronExperiment {
                 devList.add(i);
             }
         }
-        NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain,
-                allInstances, 5);
+        NERFeatureExtractor extractor = new NERFeatureExtractor(corpusTrain, allInstances, 10);
         extractor.printInfo();
-        SequentialFeatures features = extractor.getSequentialFeatures(
-                allInstances);
+        SequentialFeatures features = extractor.getSequentialFeatures(allInstances);
         Evaluator eval = new Evaluator(corpusTrain);
 
-        // here lambda = 1 / C
-        OnlineExponentiatedGradientDescent optimizer =
-                new OnlineExponentiatedGradientDescent(features,
-                        labels, trainList.toArray(), devList.toArray(), eval,
-                        0.1, 0.5, 1000, 12345);
-
+        StructuredPerceptron optimizer = new StructuredPerceptron(features, labels, trainList.toArray(),
+                devList.toArray(), eval, 0.5, 50, 12345);
         optimizer.optimize();
     }
 }
